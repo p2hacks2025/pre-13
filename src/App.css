@@ -7,6 +7,21 @@
   pointer-events: none;
 }
 
+body {
+  margin: 0;
+  overflow-x: hidden; /* 横スクロール禁止 */
+  height: 100vh;
+}
+
+.ocean {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden; /* 魚がはみ出してもスクロールしない */
+  background: #0a2540; /* 海っぽい背景（任意） */
+  touch-action: none; /* ← スマホで画面が動かない */
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
