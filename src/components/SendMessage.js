@@ -1,50 +1,88 @@
-import React from 'react'
-import { useState } from 'react';
-import { db, auth} from '../firebase.js';
-import firebase from "firebase/compat/app";
-import { Input } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
+// fileName: SendMessage.js
 
-function SendMessage() {
-    const [message, setMessage] = useState("");
-    function sendMessage(e) {
+import React, { useState } from 'react';
+import { db, auth } from '../firebase';
+import firebase from "firebase/compat/app";
+
+// propsとして currentGenre を受け取る
+function SendMessage({ currentGenre }) {
+    const [msg, setMsg] = useState('');
+    const [type, setType] = useState('shallow'); // default to 'shallow' (きらきら)
+
+    // currentGenre がない場合は投稿フォームを表示しない (Line.js側で制御しているため通常は不要)
+    if (!currentGenre) {
+        return null;
+    }
+
+    async function sendMessage(e) {
         e.preventDefault();
+
+        if (msg.trim() === '') {
+            return;
+        }
 
         const { uid, photoURL } = auth.currentUser;
 
-        db.collection("messages").add({
-            text: message,
+        await db.collection('messages').add({
+            text: msg,
             photoURL,
             uid,
             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            
+            type: type,
+            likeCount: 0,
+            likes: {},
+            favorites: {},
+            // NEW: 現在のジャンルを保存
+            genre: currentGenre 
         });
-        setMessage("");
-    }
 
-  return (
-    <div>
-      <form onSubmit={sendMessage}>
-        <div className = "sendMsg">
-        <Input 
-        style={{
-              width: "78%",
-              fontSize: "15px",
-              fontWeight: "550",
-              marginLeft: "5px",
-              marginBottom: "-3px",
-            }}
-        placeholder="メッセージを入力してください" 
-        type="text" 
-        onChange = {(e) => setMessage(e.target.value)}
-        value = {message}
-        />
-        
-        <SendIcon />
+        setMsg('');
+    }
+    
+    return (
+        // 投稿フォーム全体をラップする div
+        <div style={{ 
+            position: 'sticky', // メッセージリストの一番下に留まるようにする
+            bottom: '0', 
+            backgroundColor: 'white', 
+            padding: '10px', 
+            borderTop: '1px solid #ddd', 
+            zIndex: 10 
+        }}> 
+            {/* 投稿タイプ選択 (きらきら/やみ) */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                <label>
+                    <input 
+                        type="radio" 
+                        value="shallow" 
+                        checked={type === 'shallow'} 
+                        onChange={() => setType('shallow')} 
+                    />
+                    きらきら
+                </label>
+                <label>
+                    <input 
+                        type="radio" 
+                        value="deep" 
+                        checked={type === 'deep'} 
+                        onChange={() => setType('deep')} 
+                    />
+                    やみ
+                </label>
+            </div>
+
+            {/* 投稿フォーム */}
+            <form onSubmit={sendMessage} style={{ display: 'flex', width: '100%' }}>
+                <input 
+                    style={{ flexGrow: 1, fontSize: '15px', padding: '10px', border: '1px solid #ccc', marginRight: '10px' }}
+                    value={msg} 
+                    onChange={e => setMsg(e.target.value)} 
+                    placeholder={`[${currentGenre}] の投稿`} 
+                />
+                <button type="submit">投稿</button>
+            </form>
         </div>
-      </form>
-    </div>
-  )
+    );
 }
 
-export default SendMessage
+export default SendMessage;

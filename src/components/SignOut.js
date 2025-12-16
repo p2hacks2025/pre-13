@@ -1,18 +1,33 @@
+// fileName: SignOut.js
+
+import React from 'react';
+import { auth } from '../firebase.js';
 import { Button } from '@mui/material';
-import { auth } from '../firebase.js';  
-import React from 'react'
-import CallIcon from '@mui/icons-material/Call';
+// import SettingsIcon from '@mui/icons-material/Settings'; // ★★★ この行を削除 ★★★
 
 function SignOut() {
-  return (
-    <div className="header">
-      <Button style={{ color: "white", fontsize: "15px"}} onClick={() => auth.signOut()}>
-        サインアウト
-      </Button>
-      <h3>{auth.currentUser.displayName}</h3>
-      <CallIcon />
-    </div>
-  )
+    return (
+        <div style={{ 
+            position: 'fixed', 
+            top: '10px', 
+            right: '10px', 
+            zIndex: 50, 
+            display: 'flex', 
+            gap: '5px' 
+        }}>
+            {/* 設定アイコンのボタンを削除しました */}
+            
+            {/* ログアウトボタン */}
+            <Button 
+                onClick={() => auth.signOut()} 
+                variant="outlined"
+                color="primary"
+                size="small"
+            >
+                ログアウト
+            </Button>
+        </div>
+    )
 }
 
-export default SignOut
+export default SignOut;
