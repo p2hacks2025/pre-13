@@ -61,18 +61,15 @@ export default function Fish({ fish, onRemove, onModeChange }) {
         particle.style.setProperty("--dx", `${dx}px`);
         particle.style.setProperty("--dy", `${dy}px`);
 
-        // ✅ 画像を適用
         particle.style.backgroundImage = `url(${img})`;
         particle.style.backgroundSize = "contain";
         particle.style.backgroundRepeat = "no-repeat";
-
-        // ✅ 魚より前に出す
         particle.style.zIndex = "9999";
 
-        // ✅ body に追加（最も安定して前面に出る）
         document.body.appendChild(particle);
 
-        setTimeout(() => particle.remove(), 2000);
+        // ✅ キラリン感を出すために寿命を長く
+        setTimeout(() => particle.remove(), 600);
     }
 
     // ✅ 常時パーティクル生成
@@ -128,13 +125,21 @@ export default function Fish({ fish, onRemove, onModeChange }) {
         return () => clearInterval(interval);
     }, [fish.mode, direction]);
 
-    // ✅ NORMAL（自然な泳ぎ）
+    // ✅ NORMAL（自然な泳ぎ + 動的サイズ取得）
     useEffect(() => {
         if (fish.mode !== "normal") return;
 
         const interval = setInterval(() => {
             const w = window.innerWidth;
             const h = window.innerHeight;
+
+            // ✅ 魚の実サイズを取得（PC/スマホ対応）
+            const fishEl = document.querySelector(`#fish-${fish.id}`);
+            const fishWidth = fishEl ? fishEl.offsetWidth : 80;
+            const fishHeight = fishEl ? fishEl.offsetHeight : 80;
+
+            const maxX = w - fishWidth;
+            const maxY = h - fishHeight;
 
             let newAngle = angle;
             let newSpeed = speed;
@@ -163,9 +168,9 @@ export default function Fish({ fish, onRemove, onModeChange }) {
                 const nextX =
                     prev + newSpeed * SPEED_FACTOR * Math.cos(newAngle) * direction;
 
-                if (nextX > w - 80) {
+                if (nextX > maxX) {
                     setDirection(-1);
-                    return w - 80;
+                    return maxX;
                 }
                 if (nextX < 0) {
                     setDirection(1);
@@ -177,8 +182,10 @@ export default function Fish({ fish, onRemove, onModeChange }) {
 
             setY((prevY) => {
                 const nextY = prevY + newSpeed * SPEED_FACTOR * Math.sin(newAngle);
+
+                if (nextY > maxY) return maxY;
                 if (nextY < 0) return 0;
-                if (nextY > h - 80) return h - 80;
+
                 return nextY;
             });
 
