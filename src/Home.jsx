@@ -1,29 +1,40 @@
-import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { useState, useEffect } from "react";
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
-import FishList from "./FishList";
+import Fish from "./Fish";
+import { v4 as uuidv4 } from "uuid";
 
-function Home() {
-  const [posts, setPosts] = useState([]);
+export default function Home() {
+  const [messages, setMessages] = useState([]);
+  const [fishes, setFishes] = useState([]);
 
   useEffect(() => {
-    async function loadPosts() {
-      const querySnapshot = await getDocs(collection(db, "messages"));
-      const data = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      console.log(data);//データが取れているか確認
-      setPosts(data);
-    }
-    loadPosts();
+    const q = collection(db, "messages");
+    return onSnapshot(q, (snapshot) => {
+      const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setMessages(msgs);
+    });//-  text, type, sentiment, uid, createdAtなどが入ってる
   }, []);
+
+  //messagesが変わったときだけ魚を生成する
+  useEffect(() => {
+    const generated = messages.map(msg => ({
+      id: uuidv4(), // ← ここでユニークIDを生成
+      img: msg.type === "shallow" ? "/fish/aji.png" : "/fish/ankou.png",
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      direction: 1,
+      speed: 2,
+      type: msg.type
+    }));
+    setFishes(generated);
+  }, [messages]);
 
   return (
     <div className="ocean">
-      <FishList posts={posts} />
+      {fishes.map(fish => (
+        <Fish key={fish.id} fish={fish} />
+      ))}
     </div>
   );
 }
-
-export default Home;//魚を動かすための部分

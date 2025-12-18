@@ -9,7 +9,8 @@
 
 body {
   margin: 0;
-  overflow-x: hidden; /* 横スクロール禁止 */
+  overflow-x: hidden;
+  /* 横スクロール禁止 */
   height: 100vh;
 }
 
@@ -17,9 +18,12 @@ body {
   width: 100vw;
   height: 100vh;
   position: relative;
-  overflow: hidden; /* 魚がはみ出してもスクロールしない */
-  background: #0a2540; /* 海っぽい背景（任意） */
-  touch-action: none; /* ← スマホで画面が動かない */
+  overflow: hidden;
+  /* 魚がはみ出してもスクロールしない */
+  background: #0a2540;
+  /* 海っぽい背景（任意） */
+  touch-action: none;
+  /* ← スマホで画面が動かない */
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -47,7 +51,290 @@ body {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
+}
+
+.sparkle-effect {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  pointer-events: none;
+  z-index: 999;
+
+  background: radial-gradient(circle,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(255, 255, 255, 0) 70%);
+
+  animation: sparkle 0.8s ease-out forwards;
+}
+
+@keyframes sparkle {
+  0% {
+    transform: scale(0.3);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.1);
+    opacity: 0;
+  }
+}
+
+.star-container {
+  position: absolute;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.star {
+  width: 50px;
+  height: 50px;
+  background: white;
+  clip-path: polygon(50% 0%,
+      61% 35%,
+      98% 35%,
+      68% 57%,
+      79% 91%,
+      50% 70%,
+      21% 91%,
+      32% 57%,
+      2% 35%,
+      39% 35%);
+  position: absolute;
+  opacity: 0;
+}
+
+.star1 {
+  animation: star-move1 0.6s ease-out forwards;
+}
+
+.star2 {
+  animation: star-move2 0.6s ease-out forwards;
+}
+
+.star3 {
+  animation: star-move3 0.6s ease-out forwards;
+}
+
+.star4 {
+  animation: star-move4 0.6s ease-out forwards;
+}
+
+.star5 {
+  animation: star-move5 0.6s ease-out forwards;
+}
+
+@keyframes star-move1 {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-40px, -20px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes star-move2 {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(40px, -20px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes star-move3 {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-30px, 30px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes star-move4 {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(30px, 30px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes star-move5 {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(0px, -40px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+.particle-container {
+  position: absolute;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.particle {
+  width: 6px;
+  height: 6px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  opacity: 0;
+}
+
+.particle1 {
+  animation: particle-move1 0.6s ease-out forwards;
+}
+
+.particle2 {
+  animation: particle-move2 0.6s ease-out forwards;
+}
+
+.particle3 {
+  animation: particle-move3 0.6s ease-out forwards;
+}
+
+.particle4 {
+  animation: particle-move4 0.6s ease-out forwards;
+}
+
+.particle5 {
+  animation: particle-move5 0.6s ease-out forwards;
+}
+
+@keyframes particle-move1 {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-20px, -30px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes particle-move2 {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(25px, -20px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes particle-move3 {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(-15px, 20px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes particle-move4 {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(20px, 25px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes particle-move5 {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(0px, -40px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.gloomy-effect {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0) 70%);
+  filter: blur(8px);
+  animation: gloomy 1s ease-out forwards;
+  pointer-events: none;
+  z-index: 999;
+}
+
+@keyframes gloomy {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fairy-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.9;
+  animation: fairy-fly 0.18s ease-out forwards;
+}
+
+@keyframes fairy-fly {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.9;
+  }
+
+  100% {
+    transform: translate(var(--dx), var(--dy)) scale(0.3);
+    opacity: 0;
+  }
+}
+
+img {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  /* iPhoneの長押しメニューを抑制 */
 }

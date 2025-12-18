@@ -1,19 +1,28 @@
 import Fish from "./Fish";
+import { v4 as uuidv4 } from "uuid";
+import { useState, useEffect } from "react";
 
 function convertPostToFish(post) {
   return {
-    id: post.id,
-    img: "/fish/aji.png", // とりあえず仮の画像
+    id: uuidv4(),   // ← post.id は使わない
+    img: "/fish/aji.png",
     x: Math.random() * window.innerWidth,
     y: Math.random() * window.innerHeight,
-    speed: Math.random() * 0.8 + 0.5, // 0.3〜0.8 のゆっくり速度
-    angle: (Math.random() * 90) * (Math.PI / 180), // 0〜20° をラジアンに変換
-    direction: Math.random() > 0.5 ? 1 : -1
+    speed: Math.random() * 0.3 + 0.5,
+    angle: (Math.random() * 90) * (Math.PI / 180),
+    direction: Math.random() > 0.5 ? 1 : -1,
+    type: post.type
   };
 }
 
 export default function FishList({ posts }) {
-  const fishes = posts.map(post => convertPostToFish(post));
+  const [fishes, setFishes] = useState([]);
+
+  //posts が変わったときだけ魚を生成する
+  useEffect(() => {
+    const generated = posts.map(post => convertPostToFish(post));
+    setFishes(generated);
+  }, [posts]);
 
   return (
     <>
