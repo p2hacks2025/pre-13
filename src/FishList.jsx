@@ -1,4 +1,4 @@
-import Fish from "./Fish";
+/*import Fish from "./Fish";
 import { v4 as uuidv4 } from "uuid";
 import { useState, useEffect } from "react";
 
@@ -18,7 +18,7 @@ function convertPostToFish(post) {
 export default function FishList({ posts }) {
   const [fishes, setFishes] = useState([]);
 
-  //posts が変わったときだけ魚を生成する
+  // ✅ posts が変わったときだけ魚を生成する
   useEffect(() => {
     const generated = posts.map(post => convertPostToFish(post));
     setFishes(generated);
@@ -31,4 +31,4 @@ export default function FishList({ posts }) {
       ))}
     </>
   );
-}
+}*/

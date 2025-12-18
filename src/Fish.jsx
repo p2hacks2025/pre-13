@@ -1,134 +1,197 @@
 import { useState, useEffect } from "react";
 import "./App.css";
 
-export default function Fish({ fish }) {
-    const [x, setX] = useState(fish.x);// 魚の現在のX座標
-    const [y, setY] = useState(fish.y);// 魚の現在のY座標
-    const [direction, setDirection] = useState(fish.direction); // 1: 右向き, -1: 左向き
-    const [angle, setAngle] = useState(0); // 魚の進行方向の角度
-    const [speed, setSpeed] = useState(fish.speed); // 魚の速度
-    const [targetAngle, setTargetAngle] = useState(0); // 次に向かいたい目標の角度
-    const [targetSpeed, setTargetSpeed] = useState(speed);// 次に向かいたい目標の速度
+export default function Fish({ fish, onRemove, onModeChange }) {
+    const SPEED_FACTOR = 1.7;
 
-    const [baseEffect, setBaseEffect] = useState(null); // 魚の種類に応じた基本エフェクト
-    const [activeEffect, setActiveEffect] = useState(null); // クリック時に一時的に表示するエフェクト
+    const [x, setX] = useState(fish.x);
+    const [y, setY] = useState(fish.y);
+    const [direction, setDirection] = useState(fish.direction);
+    const [angle, setAngle] = useState(0);
+    const [speed, setSpeed] = useState(fish.speed);
+    const [targetAngle, setTargetAngle] = useState(0);
+    const [targetSpeed, setTargetSpeed] = useState(speed);
 
-    // type に応じてタッチのエフェクトを決める
+    const [baseEffect, setBaseEffect] = useState(null);
+    const [activeEffect, setActiveEffect] = useState(null);
+
+    // ✅ shallow / deep のクリックエフェクト
     useEffect(() => {
         if (fish.type === "deep") {
-            setBaseEffect("gloomy"); //一つのタッチエフェクト
+            setBaseEffect("gloomy");
         } else if (fish.type === "shallow") {
-            const shallowEffects = ["sparkle", "stars", "particles"]; //ランダムに3つのタッチエフェクト
-            const randomEffect = shallowEffects[Math.floor(Math.random() * shallowEffects.length)];
+            const shallowEffects = ["sparkle", "stars", "particles"];
+            const randomEffect =
+                shallowEffects[Math.floor(Math.random() * shallowEffects.length)];
             setBaseEffect(randomEffect);
         }
-    }, [fish.type]); // fish.type が変わったときに実行
+    }, [fish.type]);
 
     function handleClick() {
-        setActiveEffect(baseEffect); // 基本エフェクトをアクティブにする
-        setTimeout(() => setActiveEffect(null), 600); // 0.6秒後にエフェクトを消す
-    } //クリック・タッチ時のエフェクト処理
+        setActiveEffect(baseEffect);
+        setTimeout(() => setActiveEffect(null), 600);
+    }
 
-    function spawnFairyParticle(color) {
-        const fishEl = document.querySelector(`#fish-${fish.id}`); //id を使って魚の要素を取得
+    // ✅ 妖精パーティクル（public の画像を使う）
+    function spawnFairyParticle() {
+        const fishEl = document.querySelector(`#fish-${fish.id}`);
         if (!fishEl) return;
 
-        const rect = fishEl.getBoundingClientRect(); // 魚の位置とサイズを取得
+        const rect = fishEl.getBoundingClientRect();
 
-        const baseX = rect.left + rect.width / 2; // 魚のXの中心位置
-        const baseY = rect.top + rect.height / 2; // 魚のyの中心位置
+        const baseX = rect.left + rect.width / 2;
+        const baseY = rect.top + rect.height / 2;
 
-        const startX = baseX + (Math.random() * 30 - 15); // 魚の中心からx軸から少しランダムにずらす
-        const startY = baseY + (Math.random() * 30 - 15); // 魚の中心からy軸から少しランダムにずらす
+        const startX = baseX + (Math.random() * 30 - 15);
+        const startY = baseY + (Math.random() * 30 - 15);
 
-        const dx = Math.random() * 20 - 10; // パーティクルのx軸方向の移動量
-        const dy = Math.random() * 12 - 6; // パーティクルのy軸方向の移動量
+        const dx = Math.random() * 20 - 10;
+        const dy = Math.random() * 12 - 6;
+
+        // ✅ shallow → 光.png / deep → 黒.png
+        const img =
+            fish.type === "deep"
+                ? "/fish/ひし形との組み合わせ黒.png"
+                : "/fish/ひし形との組み合わせ光.png";
 
         const particle = document.createElement("div");
         particle.className = "fairy-particle";
-        particle.style.background = color;
         particle.style.left = `${startX}px`;
         particle.style.top = `${startY}px`;
         particle.style.setProperty("--dx", `${dx}px`);
         particle.style.setProperty("--dy", `${dy}px`);
-        particle.style.zIndex = "300";
 
-        const ocean = document.querySelector(".ocean"); // 魚の親要素である ocean を取得
-        ocean.appendChild(particle); // ocean に漂っているキラキラを追加
+        // ✅ 画像を適用
+        particle.style.backgroundImage = `url(${img})`;
+        particle.style.backgroundSize = "contain";
+        particle.style.backgroundRepeat = "no-repeat";
 
-        setTimeout(() => particle.remove(), 180); // 0.18秒後に漂っているキラキラを削除
+        // ✅ 魚より前に出す
+        particle.style.zIndex = "9999";
+
+        // ✅ body に追加（最も安定して前面に出る）
+        document.body.appendChild(particle);
+
+        setTimeout(() => particle.remove(), 2000);
     }
 
-    // 魚の動き
+    // ✅ 常時パーティクル生成
     useEffect(() => {
         const interval = setInterval(() => {
+            spawnFairyParticle();
+        }, 140);
 
-            let newAngle = angle;// ローカル変数で新しい angle を計算
-            let newSpeed = speed;// ローカル変数で新しい speed を計算
+        return () => clearInterval(interval);
+    }, [fish.id, fish.type]);
 
-            const maxAngle = 5 * (Math.PI / 180);// 最大角度を5度に制限
+    // ✅ EXIT（退場）
+    useEffect(() => {
+        if (fish.mode !== "exit") return;
 
-            //ランダムに次に向かいたい目標の角度を決める（±5°）
-            if (Math.random() < 0.01) {// 1% の確率で新しい目標角度を決定
-                const randomDeg = (Math.random() * 10 - 5); // -5〜+5
+        const interval = setInterval(() => {
+            setX((prev) => {
+                const exitSpeed = fish.speed * 2.5 * SPEED_FACTOR;
+                const nextX = prev + exitSpeed * direction;
+
+                if (nextX < -800 || nextX > window.innerWidth + 800) {
+                    onRemove(fish.id);
+                    return prev;
+                }
+
+                return nextX;
+            });
+        }, 30);
+
+        return () => clearInterval(interval);
+    }, [fish.mode, direction]);
+
+    // ✅ ENTER（画面外 → 画面内）
+    useEffect(() => {
+        if (fish.mode !== "enter") return;
+
+        const interval = setInterval(() => {
+            setX((prev) => {
+                const enterSpeed = fish.speed * 3 * SPEED_FACTOR;
+                const nextX = prev + enterSpeed * direction;
+
+                if (direction === 1 && nextX >= 0) {
+                    onModeChange(fish.id, "normal");
+                }
+                if (direction === -1 && nextX <= window.innerWidth - 80) {
+                    onModeChange(fish.id, "normal");
+                }
+
+                return nextX;
+            });
+        }, 30);
+
+        return () => clearInterval(interval);
+    }, [fish.mode, direction]);
+
+    // ✅ NORMAL（自然な泳ぎ）
+    useEffect(() => {
+        if (fish.mode !== "normal") return;
+
+        const interval = setInterval(() => {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            let newAngle = angle;
+            let newSpeed = speed;
+
+            const maxAngle = 5 * (Math.PI / 180);
+
+            if (Math.random() < 0.01) {
+                const randomDeg = Math.random() * 10 - 5;
                 const newTarget = randomDeg * (Math.PI / 180);
                 setTargetAngle(newTarget);
             }
 
-            //angle を targetAngle に向かってゆっくり（1秒くらい）近づける
-            const angleLerpSpeed = 0.05;
+            const angleLerpSpeed = 0.05 * SPEED_FACTOR;
             newAngle = newAngle + (targetAngle - newAngle) * angleLerpSpeed;
             newAngle = Math.max(-maxAngle, Math.min(maxAngle, newAngle));
 
-            //ランダムに次に向かいたい目標の速度を決める（0.8〜1.4）
             if (Math.random() < 0.01) {
                 const newTarget = 0.8 + Math.random() * 0.6;
                 setTargetSpeed(newTarget);
             }
 
-            //speed を targetSpeed に向かってゆっくり近づける
-            const speedLerp = 0.03;
+            const speedLerp = 0.03 * SPEED_FACTOR;
             newSpeed = newSpeed + (targetSpeed - newSpeed) * speedLerp;
 
-            //X方向の移動
-            setX(prev => {
-                const nextX = prev + newSpeed * Math.cos(newAngle) * direction;
+            setX((prev) => {
+                const nextX =
+                    prev + newSpeed * SPEED_FACTOR * Math.cos(newAngle) * direction;
 
-                if (nextX > window.innerWidth - 80) {
+                if (nextX > w - 80) {
                     setDirection(-1);
-                    newAngle = -newAngle;
-                    return window.innerWidth - 80;
-                }// 画面右端に到達したら左向きに反転
-
+                    return w - 80;
+                }
                 if (nextX < 0) {
                     setDirection(1);
-                    newAngle = -newAngle;
                     return 0;
-                }// 画面左端に到達したら右向きに反転
+                }
 
                 return nextX;
             });
 
-            //Y方向の移動
-            setY(prevY => {
-                const nextY = prevY + newSpeed * Math.sin(newAngle);
+            setY((prevY) => {
+                const nextY = prevY + newSpeed * SPEED_FACTOR * Math.sin(newAngle);
                 if (nextY < 0) return 0;
-                if (nextY > window.innerHeight - 80) return window.innerHeight - 80;
+                if (nextY > h - 80) return h - 80;
                 return nextY;
             });
 
-            //最後に state を更新
             setAngle(newAngle);
             setSpeed(newSpeed);
-
         }, 30);
 
         return () => clearInterval(interval);
-    }, [direction, angle, speed, targetAngle, targetSpeed]);
+    }, [fish.mode, direction, angle, speed, targetAngle, targetSpeed]);
 
     return (
         <>
-            {/*ここに id を付けるのが最重要 */}
+            {/* ✅ 魚本体 */}
             <div
                 style={{
                     position: "absolute",
@@ -138,12 +201,12 @@ export default function Fish({ fish }) {
             >
                 <div
                     style={{
-                        position: "relative",   // ← これが z-index の基準になる
+                        position: "relative",
                         width: "80px",
                         height: "80px",
                     }}
                 >
-                    {/* 透明ボタン */}
+                    {/* 当たり判定 */}
                     <div
                         onClick={handleClick}
                         onTouchStart={handleClick}
@@ -157,7 +220,7 @@ export default function Fish({ fish }) {
                         }}
                     />
 
-                    {/* 魚の画像 */}
+                    {/* 魚画像 */}
                     <img
                         id={`fish-${fish.id}`}
                         src={fish.img}
@@ -167,9 +230,6 @@ export default function Fish({ fish }) {
                             width: "80px",
                             height: "80px",
                             pointerEvents: "none",
-                            userSelect: "none",
-                            WebkitUserSelect: "none",
-                            WebkitTouchCallout: "none",
                             position: "absolute",
                             zIndex: 10,
                             transform: `rotate(${angle}rad) scaleX(${direction * -1})`,
@@ -179,6 +239,7 @@ export default function Fish({ fish }) {
                 </div>
             </div>
 
+            {/* ✅ クリックエフェクト */}
             {activeEffect === "sparkle" && (
                 <div className="sparkle-effect" style={{ left: x, top: y }} />
             )}

@@ -10,7 +10,6 @@
 body {
   margin: 0;
   overflow-x: hidden;
-  /* 横スクロール禁止 */
   height: 100vh;
 }
 
@@ -19,11 +18,8 @@ body {
   height: 100vh;
   position: relative;
   overflow: hidden;
-  /* 魚がはみ出してもスクロールしない */
   background: #0a2540;
-  /* 海っぽい背景（任意） */
   touch-action: none;
-  /* ← スマホで画面が動かない */
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -57,6 +53,7 @@ body {
   }
 }
 
+/* ✅ sparkle（クリックエフェクト） */
 .sparkle-effect {
   position: absolute;
   width: 80px;
@@ -88,6 +85,7 @@ body {
   }
 }
 
+/* ✅ stars（クリックエフェクト） */
 .star-container {
   position: absolute;
   pointer-events: none;
@@ -192,6 +190,7 @@ body {
   }
 }
 
+/* ✅ particles（クリックエフェクト） */
 .particle-container {
   position: absolute;
   pointer-events: none;
@@ -208,23 +207,23 @@ body {
 }
 
 .particle1 {
-  animation: particle-move1 0.6s ease-out forwards;
+  animation: particle-move1 1s ease-out forwards;
 }
 
 .particle2 {
-  animation: particle-move2 0.6s ease-out forwards;
+  animation: particle-move2 1s ease-out forwards;
 }
 
 .particle3 {
-  animation: particle-move3 0.6s ease-out forwards;
+  animation: particle-move3 1s ease-out forwards;
 }
 
 .particle4 {
-  animation: particle-move4 0.6s ease-out forwards;
+  animation: particle-move4 1s ease-out forwards;
 }
 
 .particle5 {
-  animation: particle-move5 0.6s ease-out forwards;
+  animation: particle-move5 1s ease-out forwards;
 }
 
 @keyframes particle-move1 {
@@ -287,6 +286,7 @@ body {
   }
 }
 
+/* ✅ gloomy（クリックエフェクト） */
 .gloomy-effect {
   position: absolute;
   width: 120px;
@@ -310,14 +310,16 @@ body {
   }
 }
 
+/* ✅ fairy-particle（画像は JS 側で設定） */
 .fairy-particle {
   position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
+  width: 12px;
+  height: 12px;
   pointer-events: none;
-  opacity: 0.9;
-  animation: fairy-fly 0.18s ease-out forwards;
+  opacity: 1;
+  animation: fairy-fly 1s ease-out forwards;
+  background-size: contain;
+  background-repeat: no-repeat;
 }
 
 @keyframes fairy-fly {
@@ -336,5 +338,4 @@ img {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
-  /* iPhoneの長押しメニューを抑制 */
 }
