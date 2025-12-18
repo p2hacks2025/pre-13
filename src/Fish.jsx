@@ -380,7 +380,7 @@ export default function Fish({ fish, allFishes, paused, onRemove, onModeChange }
 
     return (
         <>
-            {/* ✅ 魚コンテナ */}
+            {/* 魚コンテナ */}
             <div
                 ref={fishRef}
                 style={{
@@ -411,7 +411,7 @@ export default function Fish({ fish, allFishes, paused, onRemove, onModeChange }
                 />
             </div>
 
-            {/* ✅ sparkle */}
+            {/* sparkle */}
             {activeEffect === "sparkle" && (
                 <div
                     className="sparkle-effect"
@@ -419,7 +419,7 @@ export default function Fish({ fish, allFishes, paused, onRemove, onModeChange }
                 />
             )}
 
-            {/* ✅ stars */}
+            {/* stars */}
             {activeEffect === "stars" && (
                 <div
                     className="star-container"
@@ -433,7 +433,7 @@ export default function Fish({ fish, allFishes, paused, onRemove, onModeChange }
                 </div>
             )}
 
-            {/* ✅ particles */}
+            {/* particles */}
             {activeEffect === "particles" && (
                 <div
                     className="particle-container"
@@ -447,7 +447,7 @@ export default function Fish({ fish, allFishes, paused, onRemove, onModeChange }
                 </div>
             )}
 
-            {/* ✅ gloomy */}
+            {/* gloomy */}
             {activeEffect === "gloomy" && (
                 <div
                     className="gloomy-effect"
