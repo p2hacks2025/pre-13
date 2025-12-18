@@ -10,6 +10,10 @@ export default function Home() {
   const [fishes, setFishes] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  //paused は削除（魚を止めない）
+  //const [paused, setPaused] = useState(false);
+
+  //Firestore
   useEffect(() => {
     const q = collection(db, "messages");
     return onSnapshot(q, (snapshot) => {
@@ -18,6 +22,7 @@ export default function Home() {
     });
   }, []);
 
+  //新しいメッセージ → 魚生成
   useEffect(() => {
     setAllFishes(prev => {
       const newOnes = messages
@@ -38,6 +43,7 @@ export default function Home() {
     });
   }, [messages]);
 
+  //初回5匹
   useEffect(() => {
     if (fishes.length === 0 && allFishes.length > 0) {
       const shuffled = [...allFishes].sort(() => Math.random() - 0.5);
@@ -45,19 +51,25 @@ export default function Home() {
     }
   }, [allFishes]);
 
+  //魚削除
   function handleRemoveFish(id) {
     setFishes(prev => prev.filter(f => f.id !== id));
   }
 
+  //mode 更新
   function handleModeChange(id, newMode) {
     setFishes(prev =>
       prev.map(f => (f.id === id ? { ...f, mode: newMode } : f))
     );
   }
 
+  //魚更新
   function updateFishes() {
     if (isUpdating) return;
     setIsUpdating(true);
+
+    //paused を使わない
+    //setPaused(true);
 
     setFishes(prev => prev.map(f => ({ ...f, mode: "exit" })));
 
@@ -86,7 +98,11 @@ export default function Home() {
       setFishes(prev => [...prev, ...newOnes]);
     }, 300);
 
-    setTimeout(() => setIsUpdating(false), 1000);
+    setTimeout(() => {
+      //paused を使わない
+      //setPaused(false);
+      setIsUpdating(false);
+    }, 1000);
   }
 
   return (
@@ -100,11 +116,27 @@ export default function Home() {
           <Fish
             key={fish.id}
             fish={fish}
+            allFishes={fishes}
+            paused={false}   //常に false
             onRemove={handleRemoveFish}
             onModeChange={handleModeChange}
           />
         ))}
       </div>
+
+      {/*エフェクト専用レイヤー（妖精キラキラをここに描画） */}
+      <div
+        id="effect-layer"
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 0,
+          width: "100%",
+          height: "100%",
+          pointerEvents: "none",
+          zIndex: 999999,
+        }}
+      />
     </div>
   );
 }
