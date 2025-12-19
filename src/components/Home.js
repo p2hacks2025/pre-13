@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
-import Fish from "./Fish";
+import FishTank from "./components/FishTank"; 
 import { v4 as uuidv4 } from "uuid";
 
 export default function Home() {
@@ -9,8 +9,8 @@ export default function Home() {
   const [allFishes, setAllFishes] = useState([]);
   const [fishes, setFishes] = useState([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeep, setIsDeep] = useState(false); // 背景フラグ
 
-  // Firestore監視
   useEffect(() => {
     const q = collection(db, "messages");
     return onSnapshot(q, (snapshot) => {
@@ -19,7 +19,6 @@ export default function Home() {
     });
   }, []);
 
-  // 新規メッセージから魚データを生成
   useEffect(() => {
     setAllFishes(prev => {
       const newOnes = messages
@@ -27,21 +26,18 @@ export default function Home() {
         .map(msg => ({
           msgId: msg.id,
           id: uuidv4(),
-          img: msg.type === "shallow" ? "/fish/aji.png" : "/fish/ankou.png",
-          // 初期位置が重なりにくいように散らす
+          visualFishId: msg.type === "shallow" ? "sakana1" : "sakana2",
           x: 10 + Math.random() * 80,
-          y: 15 + Math.random() * 70,
+          y: 20 + Math.random() * 60,
           direction: Math.random() < 0.5 ? -1 : 1,
-          speed: 0.1 + Math.random() * 0.1, // 自然なスピード
-          type: msg.type,
-          mode: "normal",
+          speed: 0.1 + Math.random() * 0.1,
+          sentiment: msg.type,
           aiTitle: msg.aiTitle
         }));
       return [...prev, ...newOnes];
     });
   }, [messages]);
 
-  // 初回表示
   useEffect(() => {
     if (fishes.length === 0 && allFishes.length > 0) {
       const shuffled = [...allFishes].sort(() => Math.random() - 0.5);
@@ -49,52 +45,44 @@ export default function Home() {
     }
   }, [allFishes]);
 
-  // 魚の更新（入れ替え）
   function updateFishes() {
     if (isUpdating) return;
     setIsUpdating(true);
+    
+    // ボタンクリックで背景を切り替える
+    setIsDeep(!isDeep);
 
-    // 既存の魚を退場させる
-    setFishes(prev => prev.map(f => ({ ...f, mode: "exit" })));
-
-    setTimeout(() => {
-      const base = allFishes.length > 0 ? allFishes : fishes;
-      const nextOnes = base
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 5)
-        .map(f => ({
-          ...f,
-          id: uuidv4(),
-          direction: Math.random() < 0.5 ? 1 : -1,
-          x: Math.random() < 0.5 ? -10 : 110, // 画面外から登場
-          y: 10 + Math.random() * 80,
-          mode: "enter",
-        }));
-      setFishes(nextOnes);
-    }, 500);
-
-    setTimeout(() => setIsUpdating(false), 1500);
+    const base = allFishes.length > 0 ? allFishes : fishes;
+    const nextOnes = base
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 5)
+      .map(f => ({
+        ...f,
+        id: uuidv4(),
+        x: 10 + Math.random() * 80,
+        y: 20 + Math.random() * 60,
+      }));
+    setFishes(nextOnes);
+    setTimeout(() => setIsUpdating(false), 500);
   }
 
   return (
-    <div className="app-container" style={{ position: 'relative', width: '100vw', height: '100vh', background: 'linear-gradient(#e0f7fa, #80deea)', overflow: 'hidden' }}>
+    // background: linear-gradient... を削除。これでFishTankの画像が見える。
+    <div className="app-container">
       <button 
         onClick={updateFishes} 
         disabled={isUpdating}
         style={{ position: 'absolute', top: 20, left: 20, zIndex: 1000 }}
       >
-        魚を更新する
+        背景と魚を更新
       </button>
 
-      <div className="ocean" style={{ width: '100%', height: '100%' }}>
-        {fishes.map(fish => (
-          <Fish
-            key={fish.id}
-            initialData={fish}
-            allFishes={fishes} // 他の魚の位置を参照するために渡す
-          />
-        ))}
-      </div>
+      <FishTank 
+        messages={fishes} 
+        onFishClick={(f) => console.log(f)} 
+        showTitles={true}
+        isDeep={isDeep} 
+      />
     </div>
   );
 }

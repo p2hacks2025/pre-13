@@ -1,12 +1,17 @@
-/* index.css */
+/* src/index.css */
 html, body {
   margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden; /* スクロールバーを消す */
-  position: fixed;  /* 全体を固定 */
-  overscroll-behavior: none; /* iOS/Androidのバウンスを禁止 */
+  overflow: hidden; 
+  position: fixed; 
+  overscroll-behavior: none;
+}
+
+/* ★ここを追加してください: 全要素のはみ出し防止 */
+*, *::before, *::after {
+  box-sizing: border-box;
 }
 
 #root {

@@ -1,157 +1,191 @@
 // fileName: src/components/Fish.js
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from 'react';
 import { fishTypes } from '../utils/fishData';
 
-export default function Fish({ message, allMessages, paused, onRemove, onModeChange, onClick }) {
-    // --- 物理定数 ---
-    const SPEED_FACTOR = 1.7;
-    const OUTER_RANGE = 90;
-    const INNER_RANGE = 55;
-    const ESCAPE_SIDE_PUSH = 6;
-    const ESCAPE_BOOST = 2.5;
+const Fish = React.memo(({ message, allMessages, onClick, showTitles }) => {
+    // パラメータ
+    const BASE_SPEED = 0.15; 
+    const INNER_RANGE = 12;    
+    const SEPARATION_FORCE = 0.05; 
+    const MAX_FORCE = 0.5; 
 
-    // --- 状態管理 ---
-    // 初期位置は message に保存されている x, y を使用するか、ランダムに設定
-    const [x, setX] = useState(message.x || Math.random() * 80 + 10);
-    const [y, setY] = useState(message.y || Math.random() * 70 + 15);
-    const [direction, setDirection] = useState(message.direction === 'left' ? -1 : 1);
-    const [angle, setAngle] = useState(0);
-    const [speed, setSpeed] = useState(0.5);
+    // モード管理
+    const modeRef = useRef(message.mode || 'normal');
+    useEffect(() => {
+        modeRef.current = message.mode || 'normal';
+    }, [message.mode]);
 
-    const [targetAngle, setTargetAngle] = useState(0);
-    const [targetSpeed, setTargetSpeed] = useState(0.5);
+    const pos = useRef({
+        x: Number.isFinite(message.x) ? message.x : 10 + Math.random() * 80,
+        y: Number.isFinite(message.y) ? message.y : 20 + Math.random() * 60,
+        direction: Math.random() > 0.5 ? 1 : -1,
+        angle: 0
+    });
 
-    const [xBoost, setXBoost] = useState(0);
-    const [yBoost, setYBoost] = useState(0);
-
-    const [danger, setDanger] = useState(0);
-    const [stuckTime, setStuckTime] = useState(0);
-
-    const [baseEffect, setBaseEffect] = useState(null);
-    const [activeEffect, setActiveEffect] = useState(null);
-
+    const prevPos = useRef({ ...pos.current });
+    const allMessagesRef = useRef(allMessages);
+    const fishRef = useRef(null);
     const frameRef = useRef(null);
-    const posRef = useRef({ x: x + 40, y: y + 40 });
-
-    // 魚のデータ選択（既存ロジックを継承）
-    const fishData = fishTypes.find(f => f.id === message.visualFishId) 
-                  || fishTypes.find(f => f.id === message.sentiment) 
-                  || fishTypes[0];
 
     useEffect(() => {
-        posRef.current = { x: x + 40, y: y + 40 };
-    }, [x, y]);
+        allMessagesRef.current = allMessages;
+    }, [allMessages]);
 
-    const centerX = x + 40;
-    const centerY = y + 40;
-
-    // --- エフェクトロジック ---
-    useEffect(() => {
-        if (message.type === "deep") {
-            setBaseEffect("gloomy");
-        } else {
-            const effects = ["sparkle", "stars", "particles"];
-            setBaseEffect(effects[Math.floor(Math.random() * effects.length)]);
-        }
-    }, [message.type]);
-
-    function handleFishClick(e) {
-        if (e) e.stopPropagation();
-        if (baseEffect) {
-            setActiveEffect(baseEffect);
-            setTimeout(() => setActiveEffect(null), 600);
-        }
-        if (onClick) onClick(message);
-    }
-
-    function spawnFairyParticle() {
-        const layer = document.getElementById("effect-layer");
-        if (!layer) return;
-
-        const { x: cx, y: cy } = posRef.current;
-        const startX = cx + (Math.random() * 30 - 15);
-        const startY = cy + (Math.random() * 30 - 15);
-        const dx = Math.random() * 20 - 10;
-        const dy = Math.random() * 12 - 6;
-
-        const img = message.type === "deep"
-                ? process.env.PUBLIC_URL + "/fish/ひし形との組み合わせ黒.png"
-                : process.env.PUBLIC_URL + "/fish/ひし形との組み合わせ光.png";
-
-        const particle = document.createElement("div");
-        particle.className = "fairy-particle";
-        particle.style.left = `${startX}px`;
-        particle.style.top = `${startY}px`;
-        particle.style.setProperty("--dx", `${dx}px`);
-        particle.style.setProperty("--dy", `${dy}px`);
-        particle.style.backgroundImage = `url(${img})`;
-        particle.style.position = "absolute";
-        particle.style.width = "20px";
-        particle.style.height = "20px";
-        particle.style.zIndex = "999999";
-
-        layer.appendChild(particle);
-        setTimeout(() => particle.remove(), 600);
-    }
+    const fish = fishTypes.find(f => f.id === message.visualFishId) 
+              || fishTypes.find(f => f.id === message.sentiment) 
+              || fishTypes[0];
 
     useEffect(() => {
-        const id = setInterval(spawnFairyParticle, 140);
-        return () => clearInterval(id);
-    }, [message.type]);
+        const update = () => {
+            if (!fishRef.current) {
+                frameRef.current = requestAnimationFrame(update);
+                return;
+            }
 
-    // --- 物理演算ロジック (applySeparation, getCollisionInfo, updateNormal 等は提供コードをそのまま移植) ---
-    // ※ allMessages をループして ox, oy を計算する際、各メッセージの現在の座標が必要なため、
-    // 本来的には親の FishTank で一括管理するか、簡略化して message オブジェクト内の座標を参照します。
+            const minX = 5, maxX = 95;
+            const minY = 15, maxY = 85; 
+            
+            let { x, y, direction, angle } = pos.current;
 
-    // ... (提供された物理演算関数群をここに配置) ...
+            // NaN対策
+            if (!Number.isFinite(x) || !Number.isFinite(y)) {
+                x = prevPos.current.x; y = prevPos.current.y;
+                if (!Number.isFinite(x)) { x = 50; y = 50; }
+            } else {
+                prevPos.current = { x, y };
+            }
+
+            const isExit = modeRef.current === 'exit';
+            const speedFactor = isExit ? 8.0 : 1.0; 
+            const speed = (Number.isFinite(message.speed) ? message.speed : 1) * speedFactor;
+
+            // 退場時は近い壁へ
+            if (isExit) {
+                if (x < 50) direction = -1;
+                else direction = 1;
+            }
+
+            let vx = speed * direction * BASE_SPEED;
+            let vy = Math.sin(angle) * 0.1;
+
+            if (!isExit) {
+                const currentMessages = allMessagesRef.current;
+                if (currentMessages && currentMessages.length > 0) {
+                    currentMessages.forEach(other => {
+                        if (other.id === message.id) return;
+                        const ox = Number.isFinite(other.x) ? other.x : 50;
+                        const oy = Number.isFinite(other.y) ? other.y : 50;
+                        const dx = x - ox;
+                        const dy = y - oy;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist < INNER_RANGE && dist > 0.5) {
+                            let push = (INNER_RANGE - dist) * SEPARATION_FORCE;
+                            if (push > MAX_FORCE) push = MAX_FORCE;
+                            vx += (dx / dist) * push;
+                            vy += (dy / dist) * push;
+                        } 
+                    });
+                }
+            }
+
+            let nextX = x + vx;
+            let nextY = y + vy;
+
+            // 壁判定 (入場時と退場時は無視)
+            if (!isExit) {
+                if (y >= minY && nextY < minY) nextY = minY;
+                if (y <= maxY && nextY > maxY) nextY = maxY;
+
+                if (nextX > maxX) {
+                    if (x <= maxX) { direction = -1; nextX = maxX - 0.5; }
+                } else if (nextX < minX) {
+                    if (x >= minX) { direction = 1; nextX = minX + 0.5; }
+                }
+            }
+
+            if (Math.random() < 0.02) {
+                angle = (Math.random() * 20 - 10) * (Math.PI / 180);
+            }
+
+            pos.current = { x: nextX, y: nextY, direction, angle };
+
+            fishRef.current.style.left = `${nextX}%`;
+            fishRef.current.style.top = `${nextY}%`;
+            
+            const img = fishRef.current.querySelector('img.fish-img');
+            if (img) {
+                img.style.transform = `translate(-50%, -50%) rotate(${angle}rad) scaleX(${direction * -1})`;
+            }
+
+            frameRef.current = requestAnimationFrame(update);
+        };
+
+        frameRef.current = requestAnimationFrame(update);
+        return () => {
+            if (frameRef.current) cancelAnimationFrame(frameRef.current);
+        };
+    }, []);
 
     return (
-        <>
-            <div
-                style={{
-                    position: "absolute",
-                    left: x,
-                    top: y,
-                    width: "80px",
-                    height: "80px",
-                    zIndex: 20,
-                    cursor: 'pointer'
-                }}
-                onClick={handleFishClick}
-            >
-                {/* 魚のタイトル表示（既存機能） */}
-                {message.aiTitle && (
-                    <div style={{
-                        position: 'absolute', top: '-30px', left: '50%', transform: 'translateX(-50%)',
-                        backgroundColor: 'rgba(255,255,255,0.9)', padding: '2px 8px', borderRadius: '10px',
-                        fontSize: '10px', fontWeight: 'bold', whiteSpace: 'nowrap', pointerEvents: 'none'
-                    }}>
-                        {message.aiTitle}
-                    </div>
-                )}
-                <img
-                    src={process.env.PUBLIC_URL + '/' + fishData.img}
-                    alt={fishData.label}
-                    draggable="false"
+        <div
+            ref={fishRef}
+            onClick={(e) => { e.stopPropagation(); onClick(message); }}
+            style={{
+                position: 'absolute',
+                left: `${pos.current.x}%`, 
+                top: `${pos.current.y}%`,
+                width: '1px', height: '1px', // ★ここを0から1pxに変更して安全性を確保
+                zIndex: 10,
+                willChange: 'left, top',
+                pointerEvents: 'none', 
+                display: 'block'
+            }}
+        >
+            {showTitles && message.aiTitle && (
+                <div 
+                    className="fish-title"
                     style={{
-                        width: "80px",
-                        height: "80px",
-                        pointerEvents: "none",
-                        transform: `rotate(${angle}rad) scaleX(${direction * -1})`,
-                        transformOrigin: "center center",
-                        filter: 'drop-shadow(4px 6px 8px rgba(0,0,0,0.3))'
+                        position: 'absolute',
+                        bottom: '50px',
+                        left: '0',
+                        transform: 'translateX(-50%)',
+                        whiteSpace: 'nowrap',
+                        pointerEvents: 'auto',
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        border: '1px solid rgba(200, 230, 255, 0.8)',
+                        borderRadius: '12px',
+                        padding: '4px 8px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        color: '#0277bd',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        zIndex: 20
                     }}
-                />
-            </div>
-
-            {/* 各種エフェクト表示 */}
-            {activeEffect === "sparkle" && <div className="sparkle-effect" style={{ left: centerX, top: centerY, zIndex: 9999 }} />}
-            {activeEffect === "stars" && (
-                <div className="star-container" style={{ left: centerX, top: centerY, zIndex: 9999 }}>
-                    <div className="star star1" /><div className="star star2" /><div className="star star3" /><div className="star star4" /><div className="star star5" />
+                >
+                    {message.aiTitle}
                 </div>
             )}
-            {/* ... 他のエフェクトも同様に ... */}
-        </>
+            
+            <img 
+                className="fish-img"
+                src={process.env.PUBLIC_URL + '/' + fish.img} 
+                alt=""
+                draggable="false"
+                style={{
+                    position: 'absolute',
+                    top: 0, left: 0,
+                    transform: `translate(-50%, -50%) rotate(${pos.current.angle}rad) scaleX(${pos.current.direction * -1})`,
+                    width: window.innerWidth < 600 ? '70px' : '120px',
+                    height: 'auto',
+                    filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))',
+                    transition: 'transform 0.1s linear', 
+                    pointerEvents: 'auto',
+                    cursor: 'pointer'
+                }}
+            />
+        </div>
     );
-}
+});
+
+export default Fish;

@@ -1,7 +1,6 @@
-// fileName: PostButton.js
+// fileName: src/components/PostButton.js
 
 import React from 'react';
-import AddIcon from '@mui/icons-material/Add';
 import IconButton from '@mui/material/IconButton';
 
 function PostButton({ onClick }) {
@@ -9,15 +8,28 @@ function PostButton({ onClick }) {
         <IconButton 
             onClick={onClick}
             style={{
-                backgroundColor: '#222', // 画像のような濃いグレー
-                color: 'white',
-                borderRadius: '12px', // 少し角丸の四角
-                width: '45px',
-                height: '45px',
-                boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+                backgroundColor: 'white',
+                // ★ここを 50% に変更して完全な丸にする
+                borderRadius: '50%', 
+                width: '65px', 
+                height: '65px', 
+                padding: '12px', 
+                boxShadow: '0 4px 15px rgba(0,0,0,0.2)', 
+                transition: 'transform 0.2s', 
+            }}
+            sx={{
+                '&:active': { transform: 'scale(0.95)' } 
             }}
         >
-            <AddIcon />
+            <img 
+                src={process.env.PUBLIC_URL + '/icon_bucket.png'} 
+                alt="Post" 
+                style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'contain'
+                }} 
+            />
         </IconButton>
     );
 }

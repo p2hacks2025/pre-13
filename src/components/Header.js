@@ -1,10 +1,10 @@
 // src/components/Header.js
 import React from 'react';
 import { Box, Typography } from '@mui/material';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
-import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
-import AutoStoriesOutlinedIcon from '@mui/icons-material/AutoStoriesOutlined';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'; // ハート
+import ShowChartIcon from '@mui/icons-material/ShowChart';         // グラフ
+import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined'; // グループ
+import AutoStoriesOutlinedIcon from '@mui/icons-material/AutoStoriesOutlined'; // 本
 
 export default function Header({ activeTab, setActiveTab }) {
   const tabs = [
@@ -15,21 +15,21 @@ export default function Header({ activeTab, setActiveTab }) {
   ];
 
   return (
-    <nav className="custom-header">
-      <div className="tab-container">
+    <Box className="custom-tab-header">
+      <Box sx={{ display: 'flex', gap: { xs: '2px', sm: '10px' }, alignItems: 'center' }}>
         {tabs.map((tab) => (
-          <div
+          <Box
             key={tab.id}
             className={`tab-item ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
           >
-            <span className="tab-icon">{tab.icon}</span>
-            {activeTab === tab.id && (
-              <span className="tab-label">{tab.label}</span>
-            )}
-          </div>
+            <Box className="tab-icon">{tab.icon}</Box>
+            <Typography variant="caption" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+              {tab.label}
+            </Typography>
+          </Box>
         ))}
-      </div>
-    </nav>
+      </Box>
+    </Box>
   );
 }

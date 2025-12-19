@@ -1,84 +1,99 @@
-// fileName: GenreSelectButton.js
+// fileName: src/components/GenreSelectButton.js
 
-import React, { useState } from 'react';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
+import React, { useRef, useEffect, useState } from 'react';
+import SchoolIcon from '@mui/icons-material/School';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import PeopleIcon from '@mui/icons-material/People';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 
-const genres = ['大学', '恋愛', '勉強', 'フォロー中'];
+// ジャンルリスト
+const genres = [
+    { label: '大学', icon: <SchoolIcon style={{ fontSize: '18px' }} /> },
+    { label: '恋愛', icon: <FavoriteIcon style={{ fontSize: '18px' }} /> },
+    { label: '勉強', icon: <MenuBookIcon style={{ fontSize: '18px' }} /> },
+    { label: '自由', icon: <ChatBubbleOutlineIcon style={{ fontSize: '18px' }} /> },
+    { label: 'フォロー中', icon: <PeopleIcon style={{ fontSize: '18px' }} /> },
+];
 
 function GenreSelectButton({ selectedGenre, onSelect }) {
-    const [isOpen, setIsOpen] = useState(false);
+    const scrollRef = useRef(null);
 
-    const handleSelect = (genre) => {
-        onSelect(genre);
-        setIsOpen(false);
+    // スワイプ干渉防止
+    const stopPropagation = (e) => {
+        e.stopPropagation();
     };
 
     return (
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            {/* メインボタン */}
-            <button
-                onClick={() => setIsOpen(!isOpen)}
+        <div 
+            // コンテナ自体がスワイプを横取りしないようにするが、横スクロールは許可する
+            onTouchStart={stopPropagation}
+            onMouseDown={stopPropagation}
+            style={{ 
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'center', // 画面幅が広い時は中央寄せ
+            }}
+        >
+            <style>
+                {`
+                    .genre-scroll-container::-webkit-scrollbar {
+                        display: none;
+                    }
+                    .genre-scroll-container {
+                        -ms-overflow-style: none;
+                        scrollbar-width: none;
+                    }
+                `}
+            </style>
+            
+            <div 
+                ref={scrollRef}
+                className="genre-scroll-container"
                 style={{
-                    height: '38px',       /* 左のアイコンボタンの大きさに合わせる */
-                    padding: '0 16px',
-                    borderRadius: '20px',
-                    border: '1px solid #eee',
-                    backgroundColor: '#fff',
-                    color: '#333',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    lineHeight: '1'       /* テキストの垂直位置を固定 */
+                    gap: '12px',
+                    padding: '0 16px',
+                    overflowX: 'auto',        // 横スクロール有効
+                    whiteSpace: 'nowrap',     // 折り返し禁止
+                    WebkitOverflowScrolling: 'touch', // スマホでの慣性スクロール
+                    maxWidth: '100%',
+                    scrollBehavior: 'smooth'
                 }}
             >
-                {selectedGenre}
-                {isOpen ? <ArrowDropUpIcon /> : <ArrowDropDownIcon />}
-            </button>
-
-            {/* 子メニュー */}
-            {isOpen && (
-                <div style={{
-                    position: 'absolute',
-                    top: '48px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    display: 'flex',
-                    gap: '8px',
-                    backgroundColor: 'white',
-                    padding: '10px',
-                    borderRadius: '25px',
-                    boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-                    zIndex: 2000,
-                    whiteSpace: 'nowrap'
-                }}>
-                    {genres.map((genre) => (
+                {genres.map((item) => {
+                    const isActive = selectedGenre === item.label;
+                    return (
                         <button
-                            key={genre}
-                            onClick={() => handleSelect(genre)}
+                            key={item.label}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onSelect(item.label);
+                            }}
                             style={{
-                                padding: '6px 14px',
-                                borderRadius: '15px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '8px 16px',
                                 border: 'none',
-                                fontSize: '12px',
+                                borderRadius: '20px', // ピル型
+                                // 動画に近いスタイル: 選択中は薄い水色背景、非選択は透明
+                                backgroundColor: isActive ? '#e1f5fe' : 'transparent',
+                                color: isActive ? '#0277bd' : '#666',
+                                fontSize: '14px',
                                 fontWeight: 'bold',
                                 cursor: 'pointer',
-                                backgroundColor: selectedGenre === genre ? '#333' : '#f0f0f0',
-                                color: selectedGenre === genre ? '#fff' : '#666',
-                                transition: '0.2s'
+                                transition: 'all 0.2s ease',
+                                flexShrink: 0, // 潰れないようにする
+                                outline: 'none'
                             }}
                         >
-                            {genre}
+                            {item.icon}
+                            {item.label}
                         </button>
-                    ))}
-                </div>
-            )}
+                    );
+                })}
+            </div>
         </div>
     );
 }
