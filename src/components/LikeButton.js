@@ -1,70 +1,81 @@
-// fileName: LikeButton.js (likeCount更新処理を追加 & エラーハンドリング強化)
+// fileName: src/components/LikeButton.js
+
 import React from 'react';
-import { db, auth } from '../firebase.js';
-import ThumbUpIcon from '@mui/icons-material/ThumbUp';
-import IconButton from '@mui/material/IconButton';
-import firebase from "firebase/compat/app"; 
-import "firebase/compat/firestore";     
+import { db, auth } from "../firebase.js";
+import firebase from "firebase/compat/app";
+import { IconButton, Typography, Box } from '@mui/material';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 
 function LikeButton({ message }) {
-    const likes = message.likes || {};
-    const likeCount = message.likeCount !== undefined ? message.likeCount : Object.keys(likes).length; 
-    const isLiked = likes[auth.currentUser.uid] === true;
+    const user = auth.currentUser;
+    if (!user || !message || !message.id) return null;
 
-    const toggleLike = async () => {
-        // message.id が存在しない場合は処理を中断 (念のため)
-        if (!message.id) {
-            console.error("Error: Message ID is missing. Cannot perform update.");
-            return;
-        }
+    // ★重要: likesオブジェクトの中から自分のUIDを探す（undefinedチェックを徹底）
+    const isLiked = !!(message.likes && message.likes[user.uid]);
 
-        const messageRef = db.collection('messages').doc(message.id);
-        const userId = auth.currentUser.uid;
+    const handleLike = async (e) => {
+        // 親要素（魚やモーダル）のクリックイベントを止める
+        if (e) e.stopPropagation();
         
-        let newLikeCount;
+        const messageRef = db.collection("messages").doc(message.id);
 
-        // ★★★ ここからtry/catchブロックを追加 ★★★
-        try { 
+        try {
             if (isLiked) {
-                // いいねを解除する
-                newLikeCount = likeCount - 1;
+                // すでにいいね済みなら解除（削除とカウントダウン）
                 await messageRef.update({
-                    // フィールド値の削除
-                    [`likes.${userId}`]: firebase.firestore.FieldValue.delete(),
-                    likeCount: newLikeCount < 0 ? 0 : newLikeCount 
+                    [`likes.${user.uid}`]: firebase.firestore.FieldValue.delete(),
+                    likeCount: firebase.firestore.FieldValue.increment(-1)
                 });
             } else {
-                // いいねを付ける
-                newLikeCount = likeCount + 1;
+                // 未いいねなら追加（trueの書き込みとカウントアップ）
                 await messageRef.update({
-                    [`likes.${userId}`]: true,
-                    likeCount: newLikeCount
+                    [`likes.${user.uid}`]: true,
+                    likeCount: firebase.firestore.FieldValue.increment(1)
                 });
-            }
-            // 成功した場合のログ
-            console.log("Like operation successful!");
 
+                // 通知の送信（自分の投稿へのいいね以外）
+                if (message.uid !== user.uid) {
+                    await db.collection("notifications").add({
+                        type: "like",
+                        fromUserId: user.uid,
+                        fromUserName: user.displayName,
+                        toUserId: message.uid,
+                        postId: message.id,
+                        postText: message.text,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        checked: false
+                    });
+                }
+            }
         } catch (error) {
-            // Firestoreからのエラー（セキュリティルール違反など）を捕捉し、ログに出力
-            console.error("Firestore Update Failed:", error.code, error.message, error); 
-            alert(`いいねに失敗しました。エラーコード: ${error.code}。コンソールを確認してください。`);
+            console.error("いいね処理エラー:", error);
         }
-        // ★★★ try/catchブロックはここまで ★★★
     };
-    
+
     return (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <Box display="flex" alignItems="center">
             <IconButton 
-                size="small"
-                onClick={toggleLike}
-                style={{ color: isLiked ? 'blue' : 'gray' }} 
+                onClick={handleLike} 
+                sx={{ 
+                    color: isLiked ? '#F06292' : '#ccc',
+                    // 連続クリック防止のための視覚フィードバック
+                    transition: 'transform 0.1s active',
+                    '&:active': { transform: 'scale(1.3)' }
+                }}
             >
-                <ThumbUpIcon fontSize="inherit" />
+                {isLiked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
             </IconButton>
-            <span style={{ fontSize: '12px', marginLeft: '2px' }}>
-                {likeCount > 0 ? likeCount : ''}
-            </span>
-        </div>
+            <Typography sx={{ 
+                color: isLiked ? '#F06292' : '#888', 
+                fontWeight: 'bold', 
+                ml: -0.5, 
+                fontSize: '14px',
+                minWidth: '20px'
+            }}>
+                {message.likeCount || 0}
+            </Typography>
+        </Box>
     );
 }
 

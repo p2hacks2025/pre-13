@@ -1,0 +1,116 @@
+/* fileName: FishTank.css */
+
+/* --- 水槽（タンク）本体の修正 --- */
+.aquarium-container {
+    position: relative;
+    /* 幅を画面幅に対して指定 */
+    width: 92vw; 
+    max-width: 500px; /* PCで見ても広がりすぎないように制限 */
+    
+    /* 左右中央寄せの決定版 */
+    margin: 20px auto; 
+    display: block; 
+
+    height: 60vh;
+    background: linear-gradient(180deg, #e0f7fa 0%, #80deea 100%);
+    overflow: hidden;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    box-sizing: border-box; /* パディングを含めた計算にする */
+}
+
+/* --- 魚のスタイル --- */
+.fish {
+    position: absolute;
+    width: 60px;
+    height: 40px;
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    animation: swim 15s infinite ease-in-out;
+    z-index: 1;
+}
+
+/* 魚の動き（前回と同じ） */
+@keyframes swim {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(40px, -30px) rotate(10deg); }
+    50% { transform: translate(80px, 0px) rotate(0deg); }
+    75% { transform: translate(40px, 30px) rotate(-10deg); }
+}
+
+/* 魚の位置（前回と同じ） */
+.fish-pos-0 { top: 20%; left: 10%; animation-delay: 0s; }
+.fish-pos-1 { top: 50%; left: 60%; animation-delay: -3s; }
+.fish-pos-2 { top: 75%; left: 25%; animation-delay: -6s; }
+.fish-pos-3 { top: 30%; left: 80%; animation-delay: -9s; }
+.fish-pos-4 { top: 10%; left: 50%; animation-delay: -12s; }
+
+/* --- 詳細カード（ポップアップ）の中央寄せ修正 --- */
+.bubble-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0; /* 右端も指定 */
+    bottom: 0; /* 下端も指定 */
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7); /* 少し暗くして視認性アップ */
+    display: flex;
+    align-items: center; /* 垂直中央 */
+    justify-content: center; /* 水平中央 */
+    z-index: 2000;
+}
+
+.fish-post-card {
+    background-color: #333;
+    color: white;
+    width: 85%; /* スマホで左右に少し余白を作る */
+    max-width: 350px;
+    border-radius: 20px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    box-sizing: border-box; /* これ重要 */
+}
+
+/* 以下、前回のカード内スタイルを維持 */
+.card-header { display: flex; align-items: center; }
+.card-user-info { display: flex; align-items: center; justify-content: space-between; }
+.card-user-icon { width: 40px; height: 40px; border-radius: 50%; border: 2px solid white; margin-right: 10px; }
+.card-user-name { font-weight: bold; }
+.card-content { display: flex; flex-direction: column; gap: 10px; }
+.card-date { color: #aaa; font-size: 0.8rem; }
+.card-text { font-size: 1rem; line-height: 1.5; white-space: pre-wrap; }
+.card-sentiment-tag { align-self: flex-start; padding: 4px 10px; border-radius: 12px; color: #333; font-weight: bold; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
+.card-footer { display: flex; justify-content: center; padding-top: 10px; }
+
+.large-like-container {
+    /* ボタンを中央に配置し、サイズを大きくする */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+
+/* LikeButton内のアイコン自体を大きくし、クリック領域を確保する */
+.large-like-container button {
+    transform: scale(2.5); /* 2.5倍にして押しやすく */
+    margin: 10px;
+    transition: transform 0.1s active;
+}
+
+.large-like-container button:active {
+    transform: scale(2.2); /* 押した時に少し沈むエフェクト */
+}
+
+/* スマホでのクリックミスを防ぐため、カード内のボタン周辺に余白を持たせる */
+.card-footer {
+    margin-top: 20px;
+    padding-bottom: 20px;
+}
