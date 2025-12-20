@@ -4,8 +4,8 @@
 
 ## プロダクト名
 Emorine (エモリン)  
-<img width="100" height="100" alt="imageⅠ" src="https://github.com/user-attachments/assets/44abea24-1f0d-453a-a98d-6be4a1b758a9" />  
-
+<img width="100" height="100" alt="imageⅠ" src="https://github.com/user-attachments/assets/44abea24-1f0d-453a-a98d-6be4a1b758a9" />    
+https://line-clone-ebe25.web.app/
 ## コンセプト
 日頃のSNS疲れや感情を共有できない人たちへ向けた、メンタルヘルスケアができる、新たなSNSアプリです！
 
