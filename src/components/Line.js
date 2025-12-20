@@ -15,14 +15,14 @@ import CachedIcon from '@mui/icons-material/Cached';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
-import { IconButton, Box, Badge, Typography, Avatar, Button } from '@mui/material';
-import PersonIcon from '@mui/icons-material/Person';
+import { IconButton, Box, Badge, Typography, Avatar } from '@mui/material';
+import { NAV_GENRES, SEA_TYPES, SHALLOW_SENTIMENTS, DEEP_SENTIMENTS } from '../utils/constants';
 
 function Line() {
     const [messages, setMessages] = useState([]);
-    const [selectedGenre, setSelectedGenre] = useState('大学'); 
+    const [selectedGenre, setSelectedGenre] = useState(NAV_GENRES[0]); 
     const [selectedQueryType, setSelectedQueryType] = useState('all'); 
-    const [postFilterType, setPostFilterType] = useState('shallow'); 
+    const [postFilterType, setPostFilterType] = useState(SEA_TYPES.SHALLOW); 
     const [isPostModalOpen, setIsPostModalOpen] = useState(false); 
     const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
     const [selectedMessage, setSelectedMessage] = useState(null);
@@ -50,10 +50,10 @@ function Line() {
     const swipeActiveRef = useRef(false);
 
     const swipeRatio = Math.min(Math.max(touchOffset / 120, -1), 1);
-    const shallowOpacity = postFilterType === 'shallow' ? 1 - Math.max(0, swipeRatio) : Math.max(0, -swipeRatio);
-    const deepOpacity = postFilterType === 'deep' ? 1 + Math.min(0, swipeRatio) : Math.max(0, swipeRatio);
+    const shallowOpacity = postFilterType === SEA_TYPES.SHALLOW ? 1 - Math.max(0, swipeRatio) : Math.max(0, -swipeRatio);
+    const deepOpacity = postFilterType === SEA_TYPES.DEEP ? 1 + Math.min(0, swipeRatio) : Math.max(0, swipeRatio);
     const togglePostFilter = () => {
-        setPostFilterType((prev) => (prev === 'shallow' ? 'deep' : 'shallow'));
+        setPostFilterType((prev) => (prev === SEA_TYPES.SHALLOW ? SEA_TYPES.DEEP : SEA_TYPES.SHALLOW));
     };
 
     const isInteractiveTarget = (target) => {
@@ -124,8 +124,6 @@ function Line() {
             ? touchStart.y >= genreRect.top && touchStart.y <= genreRect.bottom
             : touchStart.y > (window.innerHeight - 140);
 
-        const GENRES = ['大学', '恋愛', '勉強', '自由', 'フォロー中'];
-
         if (isHeaderSwipe && absX > SWIPE_THRESHOLD && gestureLockRef.current !== 'vertical') {
             if (diffX > 0) {
                 setSelectedQueryType('myPosts');
@@ -134,22 +132,22 @@ function Line() {
             }
         }
         if (!isHeaderSwipe && gestureLockRef.current === 'horizontal' && isGenreSwipe && absX > SWIPE_THRESHOLD && selectedQueryType !== 'myPosts') {
-            const currentIndex = GENRES.indexOf(selectedGenre);
+            const currentIndex = NAV_GENRES.indexOf(selectedGenre);
             if (currentIndex !== -1) {
                 if (diffX > 0) {
-                    const nextIndex = (currentIndex + 1) % GENRES.length;
-                    setSelectedGenre(GENRES[nextIndex]);
+                    const nextIndex = (currentIndex + 1) % NAV_GENRES.length;
+                    setSelectedGenre(NAV_GENRES[nextIndex]);
                 } else {
-                    const prevIndex = (currentIndex - 1 + GENRES.length) % GENRES.length;
-                    setSelectedGenre(GENRES[prevIndex]);
+                    const prevIndex = (currentIndex - 1 + NAV_GENRES.length) % NAV_GENRES.length;
+                    setSelectedGenre(NAV_GENRES[prevIndex]);
                 }
             }
         }
         else if (!isHeaderSwipe && gestureLockRef.current === 'vertical' && absY > SWIPE_THRESHOLD) {
-            if (diffY > 0 && postFilterType === 'shallow') {
-                setPostFilterType('deep'); 
-            } else if (diffY < 0 && postFilterType === 'deep') {
-                setPostFilterType('shallow'); 
+            if (diffY > 0 && postFilterType === SEA_TYPES.SHALLOW) {
+                setPostFilterType(SEA_TYPES.DEEP); 
+            } else if (diffY < 0 && postFilterType === SEA_TYPES.DEEP) {
+                setPostFilterType(SEA_TYPES.SHALLOW); 
             }
         }
 
@@ -219,11 +217,12 @@ function Line() {
             if (!container.contains(e.target)) return;
             if (isInteractiveTarget(e.target)) return;
             if (!touchStartRef.current) return;
+            if (!swipeActiveRef.current || gestureLockRef.current !== 'vertical') return;
             const touch = e.touches && e.touches[0];
             if (!touch) return;
             const dx = Math.abs(touch.clientX - touchStartRef.current.x);
             const dy = Math.abs(touch.clientY - touchStartRef.current.y);
-            if (dy > dx && dy > 6) {
+            if (dy > dx && dy > 14) {
                 e.preventDefault();
             }
         };
@@ -267,17 +266,18 @@ function Line() {
     }, [selectedQueryType]);
 
     useEffect(() => {
+        if (!user) {
+            setMessages([]);
+            return undefined;
+        }
         let query = db.collection("messages");
-        const shallowSentiments = ['ENJOY', 'EXCITE', 'HEAL'];
-        const deepSentiments = ['SAD', 'ANGRY', 'DARK'];
-        const targetSentiments = postFilterType === 'shallow' ? shallowSentiments : deepSentiments;
+        const targetSentiments = postFilterType === SEA_TYPES.SHALLOW ? SHALLOW_SENTIMENTS : DEEP_SENTIMENTS;
 
         if (selectedQueryType === 'line') {
             query = query.where("uid", "==", user.uid);
         } 
         else if (selectedQueryType === 'all') {
-            query = query.where("genre", "==", selectedGenre)
-                         .where("type", "==", postFilterType);
+            query = query.where("genre", "==", selectedGenre);
         }
         else if (selectedQueryType === 'popular') {
             const threeDaysAgo = new Date();
@@ -295,8 +295,9 @@ function Line() {
         const unsubscribe = query.limit(100).onSnapshot((snapshot) => {
             let fetched = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
             
+            const matchesCurrentType = (m) => (m.type || SEA_TYPES.SHALLOW) === postFilterType;
             if (selectedQueryType === 'line') {
-                fetched = fetched.filter(m => m.genre === selectedGenre && m.type === postFilterType);
+                fetched = fetched.filter(m => m.genre === selectedGenre && matchesCurrentType(m));
             }
             else if (selectedQueryType === 'popular') {
                 fetched = fetched.filter(m => targetSentiments.includes(m.sentiment));
@@ -309,11 +310,14 @@ function Line() {
                     m.genre === selectedGenre && targetSentiments.includes(m.sentiment)
                 );
             }
+            else if (selectedQueryType === 'all') {
+                fetched = fetched.filter(m => m.genre === selectedGenre && matchesCurrentType(m));
+            }
             
             setMessages(fetched);
         });
         return () => unsubscribe();
-    }, [selectedGenre, postFilterType, selectedQueryType, user.uid]);
+    }, [selectedGenre, postFilterType, selectedQueryType, user?.uid]);
 
     const getHeaderTitle = (type) => {
         switch (type) {
@@ -553,7 +557,7 @@ function Line() {
                         width: '100%', textAlign: 'center', 
                         color: 'rgba(255,255,255,0.4)', fontSize: '11px', pointerEvents: 'none', zIndex: 1000
                     }}>
-                        {postFilterType === 'shallow' ? "↑ スワイプして深海へ" : "↓ スワイプして浅海へ"}
+                        {postFilterType === SEA_TYPES.SHALLOW ? "↑ スワイプして深海へ" : "↓ スワイプして浅海へ"}
                     </Typography>
                     <Box
                         sx={{
@@ -561,7 +565,8 @@ function Line() {
                             left: '50%',
                             bottom: `calc(${bottomNavOffset} + 38px + env(safe-area-inset-bottom))`,
                             transform: 'translateX(-50%)',
-                            zIndex: 1000
+                            zIndex: 3200,
+                            pointerEvents: 'auto'
                         }}
                     >
                         <IconButton
@@ -579,7 +584,7 @@ function Line() {
                                 '&:hover': { backgroundColor: 'rgba(255,255,255,0.3)' }
                             }}
                         >
-                            {postFilterType === 'shallow' ? (
+                            {postFilterType === SEA_TYPES.SHALLOW ? (
                                 <KeyboardArrowDownIcon sx={{ fontSize: 22 }} />
                             ) : (
                                 <KeyboardArrowUpIcon sx={{ fontSize: 22 }} />

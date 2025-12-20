@@ -12,23 +12,24 @@ import { db, auth } from "../firebase.js";
 import firebase from "firebase/compat/app";
 import { analyzeSentimentAndTitle } from '../utils/gpt';
 import { fishTypes } from '../utils/fishData';
+import { POST_GENRES, SEA_TYPES, DEEP_SENTIMENTS } from '../utils/constants';
 
 // ★重要: Cloudinaryの設定
 // 設定 > Upload > Upload presets で作成した「Unsigned」の名前をここに入力してください
 const CLOUDINARY_UPLOAD_PRESET = "emorine";
 const CLOUDINARY_CLOUD_NAME = "dxeeumux6";
 
-const POST_GENRES = [
-    { label: '大学', icon: <SchoolIcon sx={{ fontSize: 18 }} /> },
-    { label: '恋愛', icon: <FavoriteIcon sx={{ fontSize: 18 }} /> },
-    { label: '勉強', icon: <MenuBookIcon sx={{ fontSize: 18 }} /> },
-    { label: '自由', icon: <ChatBubbleOutlineIcon sx={{ fontSize: 18 }} /> },
-];
+const POST_GENRE_ICONS = {
+    大学: <SchoolIcon sx={{ fontSize: 18 }} />,
+    恋愛: <FavoriteIcon sx={{ fontSize: 18 }} />,
+    勉強: <MenuBookIcon sx={{ fontSize: 18 }} />,
+    自由: <ChatBubbleOutlineIcon sx={{ fontSize: 18 }} />
+};
 
 function PostModal({ open, onClose, selectedGenre, onPostComplete }) {
     const [text, setText] = useState("");
     const [loading, setLoading] = useState(false);
-    const [postGenre, setPostGenre] = useState('大学');
+    const [postGenre, setPostGenre] = useState(POST_GENRES[0]);
 
     const [mediaFile, setMediaFile] = useState(null);
     const [mediaPreview, setMediaPreview] = useState(null);
@@ -42,7 +43,8 @@ function PostModal({ open, onClose, selectedGenre, onPostComplete }) {
 
     useEffect(() => {
         if (open) {
-            setPostGenre(selectedGenre || '大学');
+            const initialGenre = POST_GENRES.includes(selectedGenre) ? selectedGenre : POST_GENRES[0];
+            setPostGenre(initialGenre);
             setText("");
             setSelectedFishId(safeFishTypes[0].id);
             setMediaFile(null);
@@ -105,8 +107,7 @@ function PostModal({ open, onClose, selectedGenre, onPostComplete }) {
             const sentiment = aiResult.sentiment || "ENJOY";
 
             // 感情に基づいた深さ判定
-            const deepSentiments = ['SAD', 'ANGRY', 'DARK'];
-            const assignedType = deepSentiments.includes(sentiment) ? 'deep' : 'shallow';
+            const assignedType = DEEP_SENTIMENTS.includes(sentiment) ? SEA_TYPES.DEEP : SEA_TYPES.SHALLOW;
 
             // 3. Firestoreに保存
             await db.collection("messages").add({
@@ -192,21 +193,21 @@ function PostModal({ open, onClose, selectedGenre, onPostComplete }) {
                     display: 'flex', gap: 1, mb: 3, flexWrap: 'nowrap', overflowX: 'auto', pb: 1,
                     '&::-webkit-scrollbar': { display: 'none' }
                 }}>
-                    {POST_GENRES.map((g) => (
+                    {POST_GENRES.map((label) => (
                         <Button
-                            key={g.label}
-                            onClick={() => setPostGenre(g.label)}
-                            startIcon={g.icon}
+                            key={label}
+                            onClick={() => setPostGenre(label)}
+                            startIcon={POST_GENRE_ICONS[label]}
                             sx={{
                                 borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', textTransform: 'none',
                                 px: 2, py: 1,
-                                bgcolor: postGenre === g.label ? '#29b6f6' : '#f5f5f5',
-                                color: postGenre === g.label ? '#fff' : '#666',
+                                bgcolor: postGenre === label ? '#29b6f6' : '#f5f5f5',
+                                color: postGenre === label ? '#fff' : '#666',
                                 whiteSpace: 'nowrap', flexShrink: 0,
-                                '&:hover': { bgcolor: postGenre === g.label ? '#039be5' : '#eee' }
+                                '&:hover': { bgcolor: postGenre === label ? '#039be5' : '#eee' }
                             }}
                         >
-                            {g.label}
+                            {label}
                         </Button>
                     ))}
                 </Box>

@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import { db, auth } from '../firebase';
 import firebase from "firebase/compat/app";
+import { SEA_TYPES } from '../utils/constants';
 
 // propsとして currentGenre を受け取る
 function SendMessage({ currentGenre }) {
     const [msg, setMsg] = useState('');
-    const [type, setType] = useState('shallow'); // default to 'shallow' (きらきら)
+    const [type, setType] = useState(SEA_TYPES.SHALLOW); // default to shallow
 
     // currentGenre がない場合は投稿フォームを表示しない (Line.js側で制御しているため通常は不要)
     if (!currentGenre) {
@@ -54,18 +55,18 @@ function SendMessage({ currentGenre }) {
                 <label>
                     <input 
                         type="radio" 
-                        value="shallow" 
-                        checked={type === 'shallow'} 
-                        onChange={() => setType('shallow')} 
+                        value={SEA_TYPES.SHALLOW}
+                        checked={type === SEA_TYPES.SHALLOW}
+                        onChange={() => setType(SEA_TYPES.SHALLOW)}
                     />
                     きらきら
                 </label>
                 <label>
                     <input 
                         type="radio" 
-                        value="deep" 
-                        checked={type === 'deep'} 
-                        onChange={() => setType('deep')} 
+                        value={SEA_TYPES.DEEP}
+                        checked={type === SEA_TYPES.DEEP}
+                        onChange={() => setType(SEA_TYPES.DEEP)}
                     />
                     やみ
                 </label>

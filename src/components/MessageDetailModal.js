@@ -109,10 +109,20 @@ function MessageDetailModal({ message: initialMessage, onClose }) {
         setCommentText("");
     };
 
-    const handleDelete = async () => {
-        if (window.confirm("本当にこの投稿を削除しますか？")) {
+    const handleDelete = async (e) => {
+        if (e) e.stopPropagation();
+        if (!user || !message?.id) return;
+        if (user.uid !== message.uid) {
+            alert("自分の投稿のみ削除できます。");
+            return;
+        }
+        if (!window.confirm("本当にこの投稿を削除しますか？")) return;
+        try {
             await db.collection("messages").doc(message.id).delete();
             onClose();
+        } catch (error) {
+            console.error("投稿削除エラー:", error);
+            alert("削除に失敗しました。もう一度お試しください。");
         }
     };
 
