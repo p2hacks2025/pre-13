@@ -1,7 +1,8 @@
 # P2HACKS2025 アピールシート
 
 ## プロダクト名
-Emorine (エモリン)
+Emorine (エモリン)  
+<img width="100" height="100" alt="imageⅠ" src="https://github.com/user-attachments/assets/44abea24-1f0d-453a-a98d-6be4a1b758a9" />  
 
 ## コンセプト
 日頃のSNS疲れや感情を共有できない人たちへ向けた、メンタルヘルスケアができる、新たなSNSアプリです！
@@ -16,11 +17,13 @@ Emorine (エモリン)
 - 画面左上のボタンから、自分の投稿や他のユーザーの人気投稿、自分のお気に入り投稿を見ることができます。また、マイページにいくと、AIからの感情フィードバックや投稿内容に含まれている感情がグラフ化したものをみることができます。
 
 ## 推しポイント
-既存のSNSとは違い、魚を眺めてもよし、投稿を共有して共感をもらうのもよし、様々な用途での使用が可能です。さらに、AIからの1週間の感情変化に関するフィードバックをもらえたり、各期間ごとの投稿内容に含まれている感情をグラフで可視化できたりすることで、より自分の感情に向き合いやすくなります。
+既存のSNSとは違い、魚を眺めてもよし、投稿を共有して共感をもらうのもよし、様々な用途での使用が可能です。
+投稿に対してAIが自動でつけたタイトルは、ユーザーが投稿を見るためのきっかけとなってくれます。
+さらに、AIからの1週間の感情変化に関するフィードバックがもらえたり、各期間ごとの投稿内容に含まれている感情をグラフで可視化できたりすることで、より自分の感情に向き合いやすくなります。
 
 ## スクリーンショット(任意)
 <img width="450" height="800" alt="背景" src="https://github.com/user-attachments/assets/869aac45-6060-44fa-8969-f1867b127ec5" />
-<img width="468" height="472" alt="imageⅠ" src="https://github.com/user-attachments/assets/44abea24-1f0d-453a-a98d-6be4a1b758a9" />
+
 
 ## 開発体制
 
@@ -33,7 +36,8 @@ Emorine (エモリン)
 - jinan711：フロントエンド  
 
 ### 開発における工夫した点
-逐一、各役割の進捗の確認を行ったり、対面や通話で何度も話し合いを行い、チーム内での認識のずれをなくすことを意識しました。また、事前にある程度開発スケジュールを決めておき、進捗によって柔軟に変更できるようにしました。
+逐一、各役割の進捗の確認を行ったり、対面や通話で何度も話し合いを行い、チーム内での認識のずれをなくすことを意識しました。
+また、事前にある程度開発スケジュールを決めておき、進捗によって柔軟に変更できるようにしました。
 
 ## 開発技術
 
@@ -41,7 +45,20 @@ Emorine (エモリン)
 - JavaScript(React)
 
 ### 利用したフレームワーク・ライブラリ
-- React, Firebase(Auth/Firestore), Material UI(MUI), Recharts, Capacitor, OpenAI Api(gpt-3.5), Cloudinary(アップロード)
+- React
+- Firebase(Auth/Firestore)
+- Material UI(MUI)
+- Recharts
+- Capacitor
+- OpenAI Api(gpt-3.5)
+- Cloudinary(アップロード)
 
 ### その他開発に使用したツール・サービス
-- Figma, Git/Github, Copilot, Canva, npm/Node.js, ChatGPT-5-1-Codex-Max, ChatGPT, Google Gemini
+- Figma
+- Git/Github
+- Copilot
+- Canva
+- npm/Node.js
+- ChatGPT-5-1-Codex-Max
+- ChatGPT
+- Google Gemini
