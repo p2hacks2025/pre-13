@@ -19,7 +19,7 @@ Emorineを起動し、Googleアカウントでサインインすると、「み�
 既存のSNSとは違い、魚を眺めてもよし、投稿を共有して共感をもらうのもよし、様々な用途での使用が可能です。さらに、AIからの1週間の感情変化に関するフィードバックをもらえたり、各期間ごとの投稿内容に含まれている感情をグラフで可視化できたりすることで、より自分の感情に向き合いやすくなります。
 
 ## スクリーンショット(任意)
-<img width="594" height="420" alt="スマホスクショ-removebg-preview" src="https://github.com/user-attachments/assets/b0b6cf61-b088-4151-b14e-53c4d7dbac7e" />
+<img width="594" height="420" alt="スマホスクショ-removebg-preview-removebg-preview" src="https://github.com/user-attachments/assets/b4edc31f-1e59-4ab9-bdd1-b62f43acae1f" />
 <img width="468" height="472" alt="imageⅠ" src="https://github.com/user-attachments/assets/44abea24-1f0d-453a-a98d-6be4a1b758a9" />
 
 ## 開発体制
