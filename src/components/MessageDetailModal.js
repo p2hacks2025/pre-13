@@ -1,194 +1,291 @@
 // fileName: src/components/MessageDetailModal.js
-
 import React, { useState, useEffect } from 'react';
-import { Modal, Box, Typography, TextField, IconButton, Divider, Avatar, CircularProgress } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
+import { Modal, Box, Typography, IconButton, Avatar, TextField, Button } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import SendIcon from '@mui/icons-material/Send';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { db, auth } from "../firebase.js";
 import firebase from "firebase/compat/app";
-import LikeButton from './LikeButton';
+import FollowButton from "./FollowButton";
+
+// ★追加: 感情ごとの色とラベル定義
+// 背景色は文字色をベースに薄くしたものを想定
+const sentimentConfig = {
+    ENJOY: { label: '楽しい', color: '#ffb300', bgColor: '#fff8e1' }, // 浅海
+    EXCITE: { label: 'わくわく', color: '#ff7043', bgColor: '#fbe9e7' }, // 浅海
+    HEAL:   { label: '癒やし', color: '#66bb6a', bgColor: '#e8f5e9' }, // 浅海
+    SAD:    { label: '悲しい', color: '#42a5f5', bgColor: '#e3f2fd' }, // 深海
+    ANGRY:  { label: '怒り',   color: '#ef5350', bgColor: '#ffebee' }, // 深海
+    DARK:   { label: '暗い気持ち', color: '#7e57c2', bgColor: '#f3e5f5' }, // 深海(予備)
+};
 
 function MessageDetailModal({ message: initialMessage, onClose }) {
-    const [liveMessage, setLiveMessage] = useState(initialMessage);
-    const [replies, setReplies] = useState([]);
-    const [replyText, setReplyText] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [commentText, setCommentText] = useState("");
+    const [comments, setComments] = useState([]);
+    const [message, setMessage] = useState(initialMessage);
     const user = auth.currentUser;
 
-    // 感情ごとのデザイン設定
-    const sentimentConfig = {
-        ENJOY: { bg: 'rgba(251, 192, 45, 0.15)', color: '#FBC02D', label: '楽しい' },
-        SAD: { bg: 'rgba(3, 155, 229, 0.15)', color: '#039BE5', label: 'かなしい' },
-        ANGRY: { bg: 'rgba(229, 57, 53, 0.15)', color: '#E53935', label: '怒り' },
-        EXCITE: { bg: 'rgba(240, 98, 146, 0.15)', color: '#F06292', label: 'ワクワク' },
-        HEAL: { bg: 'rgba(67, 160, 71, 0.15)', color: '#43A047', label: '癒やし' },
-        DARK: { bg: 'rgba(66, 66, 66, 0.15)', color: '#424242', label: 'どんより' },
-    };
-
+    // リアルタイム更新
     useEffect(() => {
         if (!initialMessage?.id) return;
         const unsubscribe = db.collection("messages").doc(initialMessage.id)
-            .onSnapshot((doc) => {
+            .onSnapshot(doc => {
                 if (doc.exists) {
-                    setLiveMessage({ id: doc.id, ...doc.data() });
+                    setMessage({ id: doc.id, ...doc.data() });
                 }
             });
         return () => unsubscribe();
-    }, [initialMessage?.id]);
+    }, [initialMessage]);
 
+    // コメント取得
     useEffect(() => {
         if (!initialMessage?.id) return;
-        const unsubscribe = db.collection("messages").doc(initialMessage.id)
-            .collection("replies")
+        const unsubscribe = db.collection("messages").doc(initialMessage.id).collection("comments")
             .orderBy("createdAt", "asc")
-            .onSnapshot((snapshot) => {
-                setReplies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            .onSnapshot(snapshot => {
+                setComments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
             });
         return () => unsubscribe();
-    }, [initialMessage?.id]);
+    }, [initialMessage]);
 
-    const handleSendReply = async () => {
-        if (!replyText.trim() || loading) return;
-        setLoading(true);
-        try {
-            await db.collection("messages").doc(liveMessage.id).collection("replies").add({
-                text: replyText,
-                uid: user.uid,
-                displayName: user.displayName,
-                photoURL: user.photoURL,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    const handleLike = async () => {
+        if (!user || !message) return;
+        const isLiked = message.likes && message.likes[user.uid];
+        const ref = db.collection("messages").doc(message.id);
+
+        if (isLiked) {
+            await ref.update({
+                [`likes.${user.uid}`]: firebase.firestore.FieldValue.delete(),
+                likeCount: firebase.firestore.FieldValue.increment(-1)
+            });
+        } else {
+            await ref.update({
+                [`likes.${user.uid}`]: true,
+                likeCount: firebase.firestore.FieldValue.increment(1)
             });
 
-            if (liveMessage.uid !== user.uid) {
+            // 通知: 自分以外の投稿へのいいねのみ
+            if (message.uid && user.uid !== message.uid) {
                 await db.collection("notifications").add({
-                    type: "reply",
+                    type: "like",
                     fromUserId: user.uid,
                     fromUserName: user.displayName,
-                    toUserId: liveMessage.uid,
-                    postId: liveMessage.id,
-                    postText: liveMessage.text,
-                    replyText: replyText,
+                    toUserId: message.uid,
+                    postId: message.id,
+                    postText: message.text,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     checked: false
                 });
             }
-            setReplyText("");
-        } catch (e) {
-            console.error("Reply error:", e);
-        } finally {
-            setLoading(false);
         }
     };
 
-    if (!liveMessage) return null;
+    const handleSendComment = async () => {
+        if (!commentText.trim()) return;
+        await db.collection("messages").doc(message.id).collection("comments").add({
+            text: commentText,
+            uid: user.uid,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
-    const currentSentiment = sentimentConfig[liveMessage.sentiment];
+        // 通知: 自分以外の投稿にコメントした場合
+        if (message.uid && user.uid !== message.uid) {
+            await db.collection("notifications").add({
+                type: "comment",
+                fromUserId: user.uid,
+                fromUserName: user.displayName,
+                toUserId: message.uid,
+                postId: message.id,
+                postText: message.text,
+                replyText: commentText.trim(),
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                checked: false
+            });
+        }
+        setCommentText("");
+    };
+
+    const handleDelete = async () => {
+        if (window.confirm("本当にこの投稿を削除しますか？")) {
+            await db.collection("messages").doc(message.id).delete();
+            onClose();
+        }
+    };
+
+    if (!message) return null;
+
+    const isLiked = message.likes && message.likes[user?.uid];
+    const likeCount = message.likeCount || 0;
+
+    // 感情設定を取得（なければデフォルトENJOY）
+    const currentSentiment = message.sentiment || 'ENJOY';
+    const config = sentimentConfig[currentSentiment] || sentimentConfig['ENJOY'];
 
     return (
-        <Modal open={!!initialMessage} onClose={onClose} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Modal open={!!message} onClose={onClose}>
             <Box sx={{
-                width: '92%', maxWidth: '450px', maxHeight: '80vh',
-                bgcolor: 'white', borderRadius: '24px', p: 3, outline: 'none',
-                display: 'flex', flexDirection: 'column',
-                boxShadow: '0 10px 40px rgba(0,0,0,0.12)'
+                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                width: '90%', maxWidth: 500, bgcolor: 'white', borderRadius: '20px', p: 4,
+                outline: 'none', boxShadow: 24, maxHeight: '90vh', overflowY: 'auto', pb: '120px'
             }}>
-                {/* ヘッダー: ユーザー情報と感情ラベル */}
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-                    <Box display="flex" alignItems="center" gap={1.5}>
-                        <Avatar src={liveMessage.photoURL} sx={{ width: 44, height: 44, border: '1.5px solid #f8f8f8' }} />
+                {/* ヘッダーエリア */}
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                        <Avatar src={message.photoURL} sx={{ width: 36, height: 36, border: '1px solid #eee' }} />
                         <Box>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#222', lineHeight: 1.2 }}>
-                                {liveMessage.displayName}
+                            <Typography variant="subtitle2" fontWeight="bold" sx={{ lineHeight: 1 }}>{message.displayName}</Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '10px' }}>
+                                {message.createdAt ? new Date(message.createdAt.toDate()).toLocaleString() : ""}
                             </Typography>
-                            {currentSentiment && (
-                                <Box sx={{ 
-                                    display: 'inline-block', mt: 0.4, px: 1, py: 0.2, 
-                                    borderRadius: '6px', bgcolor: currentSentiment.bg 
-                                }}>
-                                    <Typography sx={{ fontSize: '10px', fontWeight: 800, color: currentSentiment.color }}>
-                                        {currentSentiment.label}
-                                    </Typography>
-                                </Box>
-                            )}
                         </Box>
-                    </Box>
-                    <IconButton onClick={onClose} sx={{ bgcolor: '#f5f5f5', '&:hover': { bgcolor: '#eee' } }}>
-                        <CloseIcon fontSize="small" />
-                    </IconButton>
-                </Box>
-
-                <Box sx={{ overflowY: 'auto', flexGrow: 1, mb: 2, pr: 0.5 }}>
-                    {/* 本文 (タイトルの表示を削除しました) */}
-                    <Typography variant="body1" sx={{ 
-                        whiteSpace: 'pre-wrap', mb: 3, color: '#333', 
-                        lineHeight: 1.8, fontSize: '16px', fontWeight: 500
-                    }}>
-                        {liveMessage.text}
-                    </Typography>
-                    
-                    {/* いいねボタンエリア */}
-                    <Box display="flex" justifyContent="flex-end" mb={1}>
-                        <LikeButton message={liveMessage} />
-                    </Box>
-
-                    <Divider sx={{ my: 2.5 }}>
-                        <Typography variant="caption" sx={{ color: '#ccc', fontWeight: 800, letterSpacing: '1px' }}>
-                            REPLIES
-                        </Typography>
-                    </Divider>
-
-                    {/* 返信一覧 */}
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                        {replies.map(reply => (
-                            <Box key={reply.id} sx={{ display: 'flex', gap: 1.5 }}>
-                                <Avatar src={reply.photoURL} sx={{ width: 32, height: 32 }} />
-                                <Box sx={{ 
-                                    bgcolor: '#f9f9f9', px: 2, py: 1.2, 
-                                    borderRadius: '18px', borderTopLeftRadius: '4px', flexGrow: 1 
-                                }}>
-                                    <Typography sx={{ fontSize: '11px', fontWeight: 800, color: '#999', mb: 0.3 }}>
-                                        {reply.displayName}
-                                    </Typography>
-                                    <Typography sx={{ fontSize: '14.5px', color: '#444', lineHeight: 1.5 }}>
-                                        {reply.text}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        ))}
-                        {replies.length === 0 && (
-                            <Typography align="center" sx={{ color: '#ddd', py: 2, fontSize: '14px' }}>
-                                まだ返信はありません
-                            </Typography>
+                        {user && message.uid && user.uid !== message.uid && (
+                            <FollowButton targetUid={message.uid} />
                         )}
                     </Box>
+                    <Box>
+                        {user && user.uid === message.uid && (
+                            <IconButton onClick={handleDelete} color="error" size="small" sx={{ mr: 1 }}>
+                                <DeleteIcon />
+                            </IconButton>
+                        )}
+                        <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+                    </Box>
                 </Box>
 
-                {/* 入力エリア */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, pt: 2, borderTop: '1px solid #f5f5f5' }}>
-                    <TextField
-                        fullWidth size="small" placeholder="あたたかい言葉をかけよう..."
-                        value={replyText} onChange={(e) => setReplyText(e.target.value)}
-                        autoComplete="off"
-                        sx={{ 
-                            '& .MuiOutlinedInput-root': { 
-                                borderRadius: '24px', 
-                                bgcolor: '#f0f2f5',
-                                px: 2,
-                                '& fieldset': { border: 'none' }
-                            } 
-                        }}
-                    />
-                    <IconButton 
-                        onClick={handleSendReply} 
-                        disabled={!replyText.trim() || loading}
-                        sx={{ 
-                            bgcolor: '#4285F4', color: 'white', 
-                            '&:hover': { bgcolor: '#3367D6' }, 
-                            '&.Mui-disabled': { bgcolor: '#eee', color: '#ccc' },
-                            width: 40, height: 40
+                {/* ★追加: 感情ラベル */}
+                <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+                    <Box sx={{ 
+                        bgcolor: config.bgColor, 
+                        color: config.color,
+                        px: 1.5, py: 0.5, 
+                        borderRadius: '12px', 
+                        fontSize: '12px', 
+                        fontWeight: 'bold',
+                        border: `1px solid ${config.color}40`, // 薄い枠線
+                        whiteSpace: 'nowrap'
+                    }}>
+                        {config.label}
+                    </Box>
+                </Box>
+                
+                {/* 本文 */}
+                {message.text && !(message.mediaURL && message.text === "画像を投稿しました") && (
+                    <Typography
+                        variant="body1"
+                        sx={{
+                            lineHeight: 1.8,
+                            mb: 3,
+                            whiteSpace: 'pre-wrap',
+                            color: '#444',
+                            opacity: 0,
+                            transform: 'translateY(6px)',
+                            animation: 'textReveal 420ms ease forwards',
+                            '@keyframes textReveal': {
+                                from: { opacity: 0, transform: 'translateY(6px)' },
+                                to: { opacity: 1, transform: 'translateY(0)' }
+                            }
                         }}
                     >
-                        {loading ? <CircularProgress size={20} color="inherit" /> : <SendIcon sx={{ fontSize: 18 }} />}
+                        {message.text}
+                    </Typography>
+                )}
+
+                {/* 画像・動画の表示 */}
+                {message.mediaURL && (
+                    <Box
+                        sx={{
+                            mb: 3,
+                            borderRadius: '16px',
+                            overflow: 'hidden',
+                            border: '1px solid #f0f0f0',
+                            maxHeight: '45vh',
+                            bgcolor: '#00000008'
+                        }}
+                    >
+                        {message.mediaType === 'video' ? (
+                            <video
+                                controls
+                                src={message.mediaURL}
+                                style={{
+                                    width: '100%',
+                                    maxHeight: '45vh',
+                                    display: 'block',
+                                    objectFit: 'contain',
+                                    backgroundColor: '#000'
+                                }}
+                            />
+                        ) : (
+                            <img
+                                src={message.mediaURL}
+                                alt="uploaded"
+                                style={{
+                                    width: '100%',
+                                    maxHeight: '45vh',
+                                    display: 'block',
+                                    objectFit: 'contain',
+                                    backgroundColor: '#000'
+                                }}
+                            />
+                        )}
+                    </Box>
+                )}
+
+                {/* アクションボタン */}
+                <Box display="flex" alignItems="center" gap={2} mb={3}>
+                    <Button 
+                        onClick={handleLike}
+                        startIcon={isLiked ? <FavoriteIcon sx={{ color: '#ff4081' }} /> : <FavoriteBorderIcon />}
+                        sx={{ 
+                            color: isLiked ? '#ff4081' : '#666', 
+                            borderRadius: '20px', 
+                            textTransform: 'none',
+                            bgcolor: isLiked ? '#ff408111' : 'transparent',
+                            px: 2
+                        }}
+                    >
+                        {likeCount}
+                    </Button>
+                    <Typography variant="caption" color="text.secondary" sx={{ bgcolor: '#f5f5f5', px: 1.5, py: 0.5, borderRadius: '10px' }}>
+                        {message.genre}
+                    </Typography>
+                </Box>
+
+                {/* コメント一覧 */}
+                <Box sx={{ borderTop: '1px solid #eee', pt: 2, mb: 2 }}>
+                    {comments.map(c => (
+                        <Box key={c.id} sx={{ display: 'flex', gap: 1.5, mb: 2 }}>
+                            <Avatar src={c.photoURL} sx={{ width: 28, height: 28 }} />
+                            <Box sx={{ bgcolor: '#f5f5f5', p: 1.5, borderRadius: '12px', flex: 1 }}>
+                                <Typography variant="caption" fontWeight="bold" display="block" sx={{ mb: 0.5 }}>{c.displayName}</Typography>
+                                <Typography variant="body2" sx={{ fontSize: '0.9rem' }}>{c.text}</Typography>
+                            </Box>
+                        </Box>
+                    ))}
+                </Box>
+
+                {/* コメント入力欄 */}
+                <Box sx={{ 
+                    position: 'sticky',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    display: 'flex', 
+                    gap: 1, 
+                    py: 1,
+                    bgcolor: 'white',
+                    borderTop: '1px solid #eee'
+                }}>
+                    <TextField 
+                        fullWidth size="small" placeholder="コメントする..."
+                        value={commentText} onChange={(e) => setCommentText(e.target.value)}
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '20px' } }}
+                    />
+                    <IconButton color="primary" onClick={handleSendComment} disabled={!commentText.trim()}>
+                        <SendIcon />
                     </IconButton>
                 </Box>
             </Box>

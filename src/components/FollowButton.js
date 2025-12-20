@@ -60,13 +60,23 @@ function FollowButton({ targetUid }) {
     // ★★★ 修正完了 ★★★
 
     return (
-        <Button 
-            variant="contained" 
-            onClick={toggleFollow} 
-            style={{ 
-                backgroundColor: isFollowing ? 'gray' : '#007bff', 
-                color: 'white',
-                marginTop: '10px'
+        <Button
+            variant={isFollowing ? "outlined" : "contained"}
+            size="small"
+            onClick={toggleFollow}
+            sx={{
+                ml: 1,
+                borderRadius: '16px',
+                textTransform: 'none',
+                fontWeight: 'bold',
+                minWidth: '90px',
+                backgroundColor: isFollowing ? '#fff' : '#0288d1',
+                color: isFollowing ? '#0288d1' : '#fff',
+                borderColor: '#0288d1',
+                '&:hover': {
+                    backgroundColor: isFollowing ? '#f0f8ff' : '#0277bd',
+                    borderColor: '#0277bd'
+                }
             }}
         >
             {isFollowing ? 'フォロー中' : 'フォローする'}

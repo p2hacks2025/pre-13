@@ -1,100 +1,151 @@
 // fileName: src/components/GenreSelectButton.js
-
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef } from 'react';
+import { Box, ButtonBase, Typography } from '@mui/material';
 import SchoolIcon from '@mui/icons-material/School';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
-import PeopleIcon from '@mui/icons-material/People';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-
-// ジャンルリスト
-const genres = [
-    { label: '大学', icon: <SchoolIcon style={{ fontSize: '18px' }} /> },
-    { label: '恋愛', icon: <FavoriteIcon style={{ fontSize: '18px' }} /> },
-    { label: '勉強', icon: <MenuBookIcon style={{ fontSize: '18px' }} /> },
-    { label: '自由', icon: <ChatBubbleOutlineIcon style={{ fontSize: '18px' }} /> },
-    { label: 'フォロー中', icon: <PeopleIcon style={{ fontSize: '18px' }} /> },
-];
+import PeopleIcon from '@mui/icons-material/People';
 
 function GenreSelectButton({ selectedGenre, onSelect }) {
-    const scrollRef = useRef(null);
+    const touchStartRef = useRef(null);
+    const touchCurrentRef = useRef(null);
+    const SWIPE_THRESHOLD = 50;
 
-    // スワイプ干渉防止
-    const stopPropagation = (e) => {
+    const genres = [
+        { label: '大学', icon: <SchoolIcon /> },
+        { label: '恋愛', icon: <FavoriteIcon /> },
+        { label: '勉強', icon: <MenuBookIcon /> },
+        { label: '自由', icon: <ChatBubbleOutlineIcon /> },
+        { label: 'フォロー中', icon: <PeopleIcon /> },
+    ];
+
+    const updateTouch = (point) => {
+        if (!point) return;
+        if (!touchStartRef.current) {
+            touchStartRef.current = point;
+        }
+        touchCurrentRef.current = point;
+    };
+
+    const finishSwipe = () => {
+        const start = touchStartRef.current;
+        const current = touchCurrentRef.current;
+        touchStartRef.current = null;
+        touchCurrentRef.current = null;
+        if (!start || !current) return;
+
+        const diffX = start.x - current.x;
+        const diffY = start.y - current.y;
+        const absX = Math.abs(diffX);
+        const absY = Math.abs(diffY);
+        if (absX <= absY || absX < SWIPE_THRESHOLD) return;
+
+        const currentIndex = genres.findIndex((g) => g.label === selectedGenre);
+        if (currentIndex === -1) return;
+        const nextIndex = diffX > 0
+            ? (currentIndex + 1) % genres.length
+            : (currentIndex - 1 + genres.length) % genres.length;
+        onSelect(genres[nextIndex].label);
+    };
+
+    const handleTouchStart = (e) => {
         e.stopPropagation();
+        const touch = e.targetTouches[0];
+        updateTouch(touch ? { x: touch.clientX, y: touch.clientY } : null);
+    };
+
+    const handleTouchMove = (e) => {
+        e.stopPropagation();
+        const touch = e.targetTouches[0];
+        updateTouch(touch ? { x: touch.clientX, y: touch.clientY } : null);
+    };
+
+    const handleTouchEnd = (e) => {
+        e.stopPropagation();
+        finishSwipe();
+    };
+
+    const handlePointerDown = (e) => {
+        if (e.pointerType !== 'touch') return;
+        updateTouch({ x: e.clientX, y: e.clientY });
+    };
+
+    const handlePointerMove = (e) => {
+        if (e.pointerType !== 'touch') return;
+        updateTouch({ x: e.clientX, y: e.clientY });
+    };
+
+    const handlePointerUp = (e) => {
+        if (e.pointerType !== 'touch') return;
+        finishSwipe();
     };
 
     return (
-        <div 
-            // コンテナ自体がスワイプを横取りしないようにするが、横スクロールは許可する
-            onTouchStart={stopPropagation}
-            onMouseDown={stopPropagation}
-            style={{ 
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'center', // 画面幅が広い時は中央寄せ
+        <Box
+            sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            width: '100%', 
+            px: 1, 
+            py: 0.2, // ★修正: コンテナの上下余白を減らす (0.5 -> 0.2)
+            touchAction: 'pan-y'
             }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
         >
-            <style>
-                {`
-                    .genre-scroll-container::-webkit-scrollbar {
-                        display: none;
-                    }
-                    .genre-scroll-container {
-                        -ms-overflow-style: none;
-                        scrollbar-width: none;
-                    }
-                `}
-            </style>
-            
-            <div 
-                ref={scrollRef}
-                className="genre-scroll-container"
-                style={{
-                    display: 'flex',
-                    gap: '12px',
-                    padding: '0 16px',
-                    overflowX: 'auto',        // 横スクロール有効
-                    whiteSpace: 'nowrap',     // 折り返し禁止
-                    WebkitOverflowScrolling: 'touch', // スマホでの慣性スクロール
-                    maxWidth: '100%',
-                    scrollBehavior: 'smooth'
-                }}
-            >
-                {genres.map((item) => {
-                    const isActive = selectedGenre === item.label;
-                    return (
-                        <button
-                            key={item.label}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onSelect(item.label);
-                            }}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                padding: '8px 16px',
-                                border: 'none',
-                                borderRadius: '20px', // ピル型
-                                // 動画に近いスタイル: 選択中は薄い水色背景、非選択は透明
-                                backgroundColor: isActive ? '#e1f5fe' : 'transparent',
-                                color: isActive ? '#0277bd' : '#666',
-                                fontSize: '14px',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s ease',
-                                flexShrink: 0, // 潰れないようにする
-                                outline: 'none'
-                            }}
-                        >
-                            {item.icon}
-                            {item.label}
-                        </button>
-                    );
-                })}
-            </div>
-        </div>
+            {genres.map((g) => {
+                const isSelected = selectedGenre === g.label;
+                return (
+                    <ButtonBase
+                        key={g.label}
+                        onClick={() => onSelect(g.label)}
+                        sx={{
+                            flex: 1, 
+                            display: 'flex',
+                            flexDirection: 'column', 
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            py: 0.5, // ★修正: ボタン内の上下余白を減らす (1 -> 0.5)
+                            minWidth: 0, 
+                            color: isSelected ? '#0288d1' : '#9e9e9e', 
+                            transition: 'color 0.3s ease',
+                            borderRadius: '8px',
+                            '&:active': {
+                                backgroundColor: 'rgba(0, 0, 0, 0.04)'
+                            }
+                        }}
+                    >
+                        {/* アイコン */}
+                        <Box sx={{ 
+                            fontSize: isSelected ? '24px' : '22px', // ★修正: アイコンサイズを微調整
+                            display: 'flex', 
+                            mb: 0.2, // ★修正: アイコンと文字の間隔を詰める (0.5 -> 0.2)
+                            transition: 'all 0.3s ease',
+                            color: 'inherit'
+                        }}>
+                            {g.icon}
+                        </Box>
+                        
+                        {/* テキスト */}
+                        <Typography sx={{ 
+                            fontSize: '10px', 
+                            fontWeight: isSelected ? 'bold' : 'medium',
+                            color: 'inherit',
+                            whiteSpace: 'nowrap'
+                        }}>
+                            {g.label}
+                        </Typography>
+                    </ButtonBase>
+                );
+            })}
+        </Box>
     );
 }
 

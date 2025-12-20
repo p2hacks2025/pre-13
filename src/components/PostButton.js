@@ -11,11 +11,12 @@ function PostButton({ onClick }) {
                 backgroundColor: 'white',
                 // ★ここを 50% に変更して完全な丸にする
                 borderRadius: '50%', 
-                width: '65px', 
-                height: '65px', 
+                width: '64px', 
+                height: '64px', 
                 padding: '12px', 
                 boxShadow: '0 4px 15px rgba(0,0,0,0.2)', 
                 transition: 'transform 0.2s', 
+                touchAction: 'none'
             }}
             sx={{
                 '&:active': { transform: 'scale(0.95)' } 

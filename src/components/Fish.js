@@ -4,7 +4,7 @@ import { fishTypes } from '../utils/fishData';
 
 const Fish = React.memo(({ message, allMessages, onClick, showTitles }) => {
     // パラメータ
-    const BASE_SPEED = 0.15; 
+    const BASE_SPEED = 0.11; 
     const INNER_RANGE = 12;    
     const SEPARATION_FORCE = 0.05; 
     const MAX_FORCE = 0.5; 
@@ -27,13 +27,14 @@ const Fish = React.memo(({ message, allMessages, onClick, showTitles }) => {
     const fishRef = useRef(null);
     const frameRef = useRef(null);
 
-    useEffect(() => {
-        allMessagesRef.current = allMessages;
-    }, [allMessages]);
-
     const fish = fishTypes.find(f => f.id === message.visualFishId) 
               || fishTypes.find(f => f.id === message.sentiment) 
               || fishTypes[0];
+    const fishSize = window.innerWidth < 600 ? 70 : 120;
+
+    useEffect(() => {
+        allMessagesRef.current = allMessages;
+    }, [allMessages]);
 
     useEffect(() => {
         const update = () => {
@@ -43,8 +44,8 @@ const Fish = React.memo(({ message, allMessages, onClick, showTitles }) => {
             }
 
             const minX = 5, maxX = 95;
-            const minY = 15, maxY = 85; 
-            
+            const minY = 15, maxY = 72; 
+
             let { x, y, direction, angle } = pos.current;
 
             // NaN対策
@@ -56,7 +57,8 @@ const Fish = React.memo(({ message, allMessages, onClick, showTitles }) => {
             }
 
             const isExit = modeRef.current === 'exit';
-            const speedFactor = isExit ? 8.0 : 1.0; 
+            const isEntering = message.enteredAt && (Date.now() - message.enteredAt) < 1200;
+            const speedFactor = isExit ? 12.0 : (isEntering ? 3.0 : 1.0);
             const speed = (Number.isFinite(message.speed) ? message.speed : 1) * speedFactor;
 
             // 退場時は近い壁へ
@@ -112,7 +114,7 @@ const Fish = React.memo(({ message, allMessages, onClick, showTitles }) => {
 
             fishRef.current.style.left = `${nextX}%`;
             fishRef.current.style.top = `${nextY}%`;
-            
+
             const img = fishRef.current.querySelector('img.fish-img');
             if (img) {
                 img.style.transform = `translate(-50%, -50%) rotate(${angle}rad) scaleX(${direction * -1})`;
@@ -131,11 +133,14 @@ const Fish = React.memo(({ message, allMessages, onClick, showTitles }) => {
         <div
             ref={fishRef}
             onClick={(e) => { e.stopPropagation(); onClick(message); }}
+            data-no-swipe="true"
             style={{
                 position: 'absolute',
                 left: `${pos.current.x}%`, 
                 top: `${pos.current.y}%`,
-                width: '1px', height: '1px', // ★ここを0から1pxに変更して安全性を確保
+                width: `${fishSize}px`,
+                height: `${fishSize}px`,
+                transform: 'translate(-50%, -50%)',
                 zIndex: 10,
                 willChange: 'left, top',
                 pointerEvents: 'none', 
@@ -147,9 +152,9 @@ const Fish = React.memo(({ message, allMessages, onClick, showTitles }) => {
                     className="fish-title"
                     style={{
                         position: 'absolute',
-                        bottom: '50px',
-                        left: '0',
-                        transform: 'translateX(-50%)',
+                        bottom: '100%',
+                        left: '50%',
+                        transform: 'translate(-50%, -4px)',
                         whiteSpace: 'nowrap',
                         pointerEvents: 'auto',
                         backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -174,9 +179,10 @@ const Fish = React.memo(({ message, allMessages, onClick, showTitles }) => {
                 draggable="false"
                 style={{
                     position: 'absolute',
-                    top: 0, left: 0,
+                    top: '50%',
+                    left: '50%',
                     transform: `translate(-50%, -50%) rotate(${pos.current.angle}rad) scaleX(${pos.current.direction * -1})`,
-                    width: window.innerWidth < 600 ? '70px' : '120px',
+                    width: `${fishSize}px`,
                     height: 'auto',
                     filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))',
                     transition: 'transform 0.1s linear', 

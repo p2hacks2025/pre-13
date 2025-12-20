@@ -8,6 +8,7 @@ import { auth } from '../firebase';
 // アイコン類
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline'; // プロフィール
 import WavesIcon from '@mui/icons-material/Waves';               // 自分の海
+import PublicIcon from '@mui/icons-material/Public';             // みんなの海
 import StarBorderIcon from '@mui/icons-material/StarBorder';     // 人気
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'; // お気に入り
 
@@ -15,9 +16,11 @@ function QueryTypeMenu({ onSelect, currentType }) {
     const [open, setOpen] = useState(false);
     const user = auth.currentUser;
 
-    // 指定された4つのメニュー項目
+    // メニュー項目の定義（順番変更）
     const menuItems = [
         { label: 'プロフィール', value: 'myPosts', icon: <PersonOutlineIcon sx={{ fontSize: 28 }} /> },
+        // ★ここを変更: みんなの海を先に持ってくる
+        { label: 'みんなの海', value: 'all', icon: <PublicIcon sx={{ fontSize: 28 }} /> },
         { label: '自分の海', value: 'line', icon: <WavesIcon sx={{ fontSize: 28 }} /> },
         { label: '人気のおさかな', value: 'popular', icon: <StarBorderIcon sx={{ fontSize: 28 }} /> },
         { label: 'お気に入りのおさかな', value: 'liked', icon: <FavoriteBorderIcon sx={{ fontSize: 28 }} /> },
@@ -28,6 +31,11 @@ function QueryTypeMenu({ onSelect, currentType }) {
             onSelect(value);
             setOpen(false);
         }
+    };
+
+    const handleTouchSelect = (value) => (e) => {
+        e.preventDefault();
+        handleSelect(value);
     };
 
     const handleLogout = () => {
@@ -71,9 +79,9 @@ function QueryTypeMenu({ onSelect, currentType }) {
                     }
                 }}
             >
-                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', touchAction: 'manipulation' }}>
                     
-                    {/* 1. ユーザー情報ヘッダー (IDとフォロー数を削除) */}
+                    {/* 1. ユーザー情報ヘッダー */}
                     <Box sx={{ p: 2, pt: 3, pb: 2 }}>
                         <Avatar 
                             src={user?.photoURL} 
@@ -93,6 +101,7 @@ function QueryTypeMenu({ onSelect, currentType }) {
                                     button 
                                     key={item.label} 
                                     onClick={() => handleSelect(item.value)}
+                                    onTouchStart={handleTouchSelect(item.value)}
                                     sx={{ 
                                         py: 2, 
                                         '&:hover': { backgroundColor: '#f7f9f9' }

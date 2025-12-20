@@ -1,14 +1,13 @@
 // fileName: src/components/FishTank.js
 import Fish from './Fish'; 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { IconButton } from '@mui/material';
-import CachedIcon from '@mui/icons-material/Cached'; 
 import { fishTypes } from '../utils/fishData';
 import './FishTank.css';
 
 const MAX_FISH_COUNT = 7;
 
-function FishTank({ messages, onFishClick, showTitles, currentFilter, selectedGenre }) {
+// ★修正: selectedQueryType を受け取る
+function FishTank({ messages, onFishClick, showTitles, currentFilter, selectedGenre, selectedQueryType, refreshToken }) {
     const isDeep = currentFilter === 'deep';
     const bgImage = isDeep 
         ? `url(${process.env.PUBLIC_URL}/bg_deep.png)` 
@@ -18,7 +17,6 @@ function FishTank({ messages, onFishClick, showTitles, currentFilter, selectedGe
     const [isReplacing, setIsReplacing] = useState(false);
     
     const timerRef = useRef(null);
-    // 最新のメッセージリストを常に参照できるようにする
     const messagesRef = useRef(messages);
     useEffect(() => { messagesRef.current = messages; }, [messages]);
 
@@ -40,7 +38,6 @@ function FishTank({ messages, onFishClick, showTitles, currentFilter, selectedGe
         });
     }, []);
 
-    // 魚をリロードする共通関数
     const refreshFish = useCallback(() => {
         const currentMsgs = messagesRef.current || [];
         if (currentMsgs.length === 0) {
@@ -48,7 +45,6 @@ function FishTank({ messages, onFishClick, showTitles, currentFilter, selectedGe
             setIsReplacing(false);
             return;
         }
-
         const nextBatchRaw = pickRandom(currentMsgs, MAX_FISH_COUNT);
         const lanes = generateLanes(nextBatchRaw.length);
 
@@ -59,6 +55,7 @@ function FishTank({ messages, onFishClick, showTitles, currentFilter, selectedGe
                 ...m,
                 uniqueKey: `${m.id}-${Date.now()}`, 
                 mode: 'normal',
+                enteredAt: Date.now(),
                 x: startX, 
                 y: lanes[index], 
                 direction: startFromLeft ? 1 : -1 
@@ -70,38 +67,42 @@ function FishTank({ messages, onFishClick, showTitles, currentFilter, selectedGe
         timerRef.current = null;
     }, [pickRandom, generateLanes]);
 
-    // ★ジャンルやフィルタが変わったら自動リロード
+    // ジャンル/フィルタ/モード変更時にリロード（アニメーション有り）
     useEffect(() => {
-        // 退場アニメーション開始
         setIsReplacing(true);
         setDisplayMessages(prev => prev.map(m => ({ ...m, mode: 'exit' })));
-
         if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => { refreshFish(); }, 600);
+    }, [selectedGenre, currentFilter, selectedQueryType, refreshFish]);
 
-        // 0.6秒後に新しい魚を入場させる
-        timerRef.current = setTimeout(() => {
-            refreshFish();
-        }, 600);
-        
-    }, [selectedGenre, currentFilter, refreshFish]);
-
-    // ★メッセージデータ更新時の処理（新規投稿や初回ロード）
     useEffect(() => {
-        // リロードアニメーション中は割り込まない
         if (isReplacing) return;
-
         const currentMsgs = messages || [];
-        
-        // 初回ロードなどで表示が空の場合、データがあれば即時表示
+        if (currentMsgs.length > 0 && displayMessages.length > 0) {
+            const latestById = new Map(currentMsgs.map(m => [m.id, m]));
+            setDisplayMessages(prev => prev.map(p => {
+                const latest = latestById.get(p.id);
+                if (!latest) return p;
+                return {
+                    ...p,
+                    ...latest,
+                    x: p.x,
+                    y: p.y,
+                    direction: p.direction,
+                    angle: p.angle,
+                    mode: p.mode,
+                    enteredAt: p.enteredAt,
+                    uniqueKey: p.uniqueKey,
+                    speed: p.speed
+                };
+            }));
+        }
         if (displayMessages.length === 0 && currentMsgs.length > 0) {
             refreshFish();
             return;
         }
-
-        // 新規投稿の検出
         const currentIds = new Set(displayMessages.map(m => m.id));
         const newPosts = currentMsgs.filter(m => !currentIds.has(m.id));
-
         if (newPosts.length > 0) {
             const addedFish = newPosts.map(m => {
                 const startFromLeft = Math.random() > 0.5;
@@ -110,33 +111,49 @@ function FishTank({ messages, onFishClick, showTitles, currentFilter, selectedGe
                     ...m,
                     uniqueKey: m.id,
                     mode: 'normal',
+                    enteredAt: Date.now(),
                     x: startX, 
-                    y: 20 + Math.random() * 60,
+                    y: 25 + Math.random() * 45, // ボタン帯を避けつつ中央寄せ
                     direction: startFromLeft ? 1 : -1,
+              
                     speed: (m.speed || 1) * 1.5
                 };
             });
-            setDisplayMessages(prev => [...prev, ...addedFish]);
+            setDisplayMessages(prev => {
+                const merged = [...prev, ...addedFish];
+                if (merged.length <= MAX_FISH_COUNT) return merged;
+                return merged.slice(merged.length - MAX_FISH_COUNT);
+            });
         }
     }, [messages, isReplacing, displayMessages, refreshFish]);
 
-    // 手動リロードボタン
-    const handleRefresh = (e) => {
-        e.stopPropagation();
+    const handleRefresh = () => {
         if (isReplacing) return;
         setIsReplacing(true);
-
         setDisplayMessages(prev => prev.map(m => ({ ...m, mode: 'exit' })));
-
         if (timerRef.current) clearTimeout(timerRef.current);
-
-        timerRef.current = setTimeout(() => {
-            refreshFish();
-        }, 600); 
+        timerRef.current = setTimeout(() => { refreshFish(); }, 600); 
     };
 
+    useEffect(() => {
+        if (refreshToken === undefined) return;
+        handleRefresh();
+    }, [refreshToken]);
+
     return (
-        <div className={`aquarium-container ${currentFilter}`} style={{ backgroundImage: bgImage }}>
+        <div
+            className={`aquarium-container ${currentFilter}`}
+            style={{
+                backgroundImage: bgImage,
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center center',
+                width: '100%',
+                height: '100%',
+                left: 0,
+                transform: 'none'
+            }}
+        >
             
             {displayMessages.map((m) => (
                 <Fish 
@@ -147,31 +164,6 @@ function FishTank({ messages, onFishClick, showTitles, currentFilter, selectedGe
                     showTitles={showTitles}
                 />
             ))}
-
-            <IconButton 
-                onClick={handleRefresh}
-                sx={{
-                    position: 'fixed', 
-                    bottom: 'calc(25px + env(safe-area-inset-bottom))', 
-                    left: '80px',
-                    zIndex: 2000, 
-                    pointerEvents: 'auto',
-                    backgroundColor: 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    backdropFilter: 'blur(8px)',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    '&:hover': {
-                        backgroundColor: 'rgba(255,255,255,0.3)',
-                    },
-                    width: '45px', 
-                    height: '45px',
-                    transition: 'transform 0.6s ease',
-                    transform: isReplacing ? 'rotate(360deg)' : 'none'
-                }}
-            >
-                <CachedIcon />
-            </IconButton>
-
         </div>
     );
 }
