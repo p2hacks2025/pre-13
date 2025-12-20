@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .App {
   text-align: center;
 }
@@ -36,3 +37,30 @@
     transform: rotate(360deg);
   }
 }
+=======
+/* 画面全体を固定し、引っ張りを無効化 */
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* 全体のスクロールを禁止 */
+  position: fixed; /* iOSでのスクロールバウンス防止 */
+}
+
+/* アプリ全体のコンテナ */
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  /* タッチ操作によるバウンス（引っ張り）を防止 */
+  overscroll-behavior: none; 
+  touch-action: none; /* 基本的にブラウザのデフォルトタッチ挙動を無効化 */
+}
+
+/* スクロールが必要な場所（自分の投稿リストなど）だけにスクロールを許可 */
+.scrollable-content {
+  overflow-y: auto;
+  touch-action: pan-y; /* 縦スクロールのみ許可 */
+  -webkit-overflow-scrolling: touch;
+}
+>>>>>>> oceanTest

@@ -1,0 +1,96 @@
+/* fileName: src/components/FishTank.css */
+
+.aquarium-container {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    overflow: hidden;
+    background: transparent !important;
+    pointer-events: none; 
+}
+
+/* 魚のタイトル：泡（バブル）デザインに変更 */
+.fish-title {
+    /* 泡っぽい背景（半透明の白） */
+    background: rgba(255, 255, 255, 0.7) !important;
+    
+    /* 境界線とぼかしで立体感を出す */
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(2px);
+    
+    /* 丸い形状 */
+    border-radius: 20px !important;
+    
+    padding: 4px 10px !important;
+    font-size: 11px !important;
+    color: #01579b !important;
+    font-weight: bold !important;
+    white-space: nowrap !important;
+    
+    /* 影 */
+    box-shadow: 0 4px 10px rgba(0, 100, 255, 0.15) !important;
+    
+    z-index: 100 !important;
+    
+    /* ぷかぷか揺れるアニメーション（オプション） */
+    animation: floatTitle 3s ease-in-out infinite;
+}
+
+@keyframes floatTitle {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-3px); }
+}
+
+/* 以下、変更なし */
+.aquarium-container::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        125deg, 
+        rgba(255, 255, 255, 0) 0%, 
+        rgba(255, 255, 255, 0.03) 10%, 
+        rgba(255, 255, 255, 0) 20%
+    );
+    pointer-events: none;
+    z-index: 1;
+    animation: rays 40s infinite linear;
+}
+
+@keyframes rays {
+    from { background-position: 0 0; }
+    to { background-position: 1000px 0; }
+}
+
+.aquarium-container img {
+    pointer-events: auto;
+}
+
+/* 以下キラキラエフェクトなどはそのまま */
+.sparkle-low {
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8));
+    animation: pulse-white 2s infinite ease-in-out;
+}
+.sparkle-medium {
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.8)) brightness(1.1);
+    animation: pulse-gold 1.5s infinite ease-in-out;
+}
+.sparkle-high {
+    filter: drop-shadow(0 0 12px rgba(0, 255, 255, 0.9)) brightness(1.2);
+    animation: pulse-rainbow 0.8s infinite alternate;
+}
+
+@keyframes pulse-white {
+    0% { filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5)); }
+    50% { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 1)); }
+    100% { filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5)); }
+}
+@keyframes pulse-gold {
+    0% { filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.6)) brightness(1); }
+    50% { filter: drop-shadow(0 0 15px rgba(255, 215, 0, 1)) brightness(1.2); }
+    100% { filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.6)) brightness(1); }
+}
+@keyframes pulse-rainbow {
+    0% { filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.8)) hue-rotate(0deg) brightness(1.1); }
+    100% { filter: drop-shadow(0 0 15px rgba(255, 0, 255, 0.9)) hue-rotate(90deg) brightness(1.4); }
+}
