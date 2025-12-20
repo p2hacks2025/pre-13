@@ -48,4 +48,4 @@ jinan711：フロントエンド
 - React, Firebase(Auth/Firestore), Material UI(MUI), Recharts, Capacitor, OpenAI Api(gpt-3.5), Cloudinary(アップロード)
 
 ### その他開発に使用したツール・サービス
-- Figma, Git/Github, Copilot, Canva, Xcode(iOSビルド), npm/Node.js, ChatGPT-5-1-Codex-Max, ChatGPT, Google Gemini
+- Figma, Git/Github, Copilot, Canva, npm/Node.js, ChatGPT-5-1-Codex-Max, ChatGPT, Google Gemini
