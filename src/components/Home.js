@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "./firebase";
-import FishTank from "./components/FishTank"; 
+import { db } from "../firebase";
+import FishTank from "./FishTank"; 
+import { SEA_TYPES } from "../utils/constants";
 import { v4 as uuidv4 } from "uuid";
 
 export default function Home() {
@@ -26,7 +27,7 @@ export default function Home() {
         .map(msg => ({
           msgId: msg.id,
           id: uuidv4(),
-          visualFishId: msg.type === "shallow" ? "sakana1" : "sakana2",
+          visualFishId: msg.type === SEA_TYPES.SHALLOW ? "sakana1" : "sakana2",
           x: 10 + Math.random() * 80,
           y: 20 + Math.random() * 60,
           direction: Math.random() < 0.5 ? -1 : 1,

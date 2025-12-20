@@ -1,24 +1,31 @@
 // fileName: src/components/GenreSelectButton.js
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { Box, ButtonBase, Typography } from '@mui/material';
 import SchoolIcon from '@mui/icons-material/School';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import PeopleIcon from '@mui/icons-material/People';
+import { NAV_GENRES } from '../utils/constants';
 
 function GenreSelectButton({ selectedGenre, onSelect }) {
     const touchStartRef = useRef(null);
     const touchCurrentRef = useRef(null);
     const SWIPE_THRESHOLD = 50;
 
-    const genres = [
-        { label: '大学', icon: <SchoolIcon /> },
-        { label: '恋愛', icon: <FavoriteIcon /> },
-        { label: '勉強', icon: <MenuBookIcon /> },
-        { label: '自由', icon: <ChatBubbleOutlineIcon /> },
-        { label: 'フォロー中', icon: <PeopleIcon /> },
-    ];
+    const genres = useMemo(() => {
+        const iconMap = {
+            大学: <SchoolIcon />,
+            恋愛: <FavoriteIcon />,
+            勉強: <MenuBookIcon />,
+            自由: <ChatBubbleOutlineIcon />,
+            フォロー中: <PeopleIcon />
+        };
+        return NAV_GENRES.map((label) => ({
+            label,
+            icon: iconMap[label]
+        }));
+    }, []);
 
     const updateTouch = (point) => {
         if (!point) return;

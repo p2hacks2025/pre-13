@@ -4,13 +4,14 @@ import React from 'react';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import IconButton from '@mui/material/IconButton';
+import { SEA_TYPES } from '../utils/constants';
 
 function PostTypeToggle({ currentFilter, onSelect }) {
-    const isShallow = currentFilter === 'shallow';
+    const isShallow = currentFilter === SEA_TYPES.SHALLOW;
 
     return (
         <IconButton 
-            onClick={() => onSelect(isShallow ? 'deep' : 'shallow')}
+            onClick={() => onSelect(isShallow ? SEA_TYPES.DEEP : SEA_TYPES.SHALLOW)}
             style={{
                 backgroundColor: '#222',
                 color: 'white',

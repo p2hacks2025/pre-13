@@ -6,18 +6,20 @@ import { Button } from '@mui/material';
 import firebase from "firebase/compat/app";
 
 function FollowButton({ targetUid }) {
-    const currentUserId = auth.currentUser.uid;
-    
-    // ★★★ 修正箇所1: Hooksを常にトップレベルで呼び出す ★★★
+    const currentUserId = auth.currentUser?.uid;
+
+    // ★★★ Hooksは常にトップレベルで呼ぶ ★★★
     const [isFollowing, setIsFollowing] = useState(false);
-    
+
     // フォロー/フォロワー関係のドキュメント参照
-    const followRef = db.collection('follows').doc(currentUserId);
-    
+    const followRef = currentUserId ? db.collection('follows').doc(currentUserId) : null;
+
     // 状態の監視 (useEffect は常に実行)
     useEffect(() => {
-        // targetUidが自分自身でないことを確認してから処理
-        if (currentUserId === targetUid) return; 
+        if (!followRef || !targetUid || currentUserId === targetUid) {
+            setIsFollowing(false);
+            return undefined;
+        }
 
         const unsubscribe = followRef.onSnapshot(doc => {
             if (doc.exists) {
@@ -29,7 +31,7 @@ function FollowButton({ targetUid }) {
         });
 
         return () => unsubscribe();
-    }, [targetUid, currentUserId]); // currentUserId も依存配列に追加
+    }, [followRef, targetUid, currentUserId]);
 
     // フォロー/アンフォローの切り替え
    const toggleFollow = async () => {
@@ -54,7 +56,7 @@ function FollowButton({ targetUid }) {
     };
 
     // ★★★ 修正箇所2: Hooksの後に条件付きreturnを移動 ★★★
-    if (currentUserId === targetUid) {
+    if (!currentUserId || !targetUid || currentUserId === targetUid) {
          return null; 
     }
     // ★★★ 修正完了 ★★★

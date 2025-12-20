@@ -1,14 +1,14 @@
 // fileName: src/components/FishTank.js
 import Fish from './Fish'; 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { fishTypes } from '../utils/fishData';
+import { SEA_TYPES } from '../utils/constants';
 import './FishTank.css';
 
 const MAX_FISH_COUNT = 7;
 
 // ★修正: selectedQueryType を受け取る
 function FishTank({ messages, onFishClick, showTitles, currentFilter, selectedGenre, selectedQueryType, refreshToken }) {
-    const isDeep = currentFilter === 'deep';
+    const isDeep = currentFilter === SEA_TYPES.DEEP;
     const bgImage = isDeep 
         ? `url(${process.env.PUBLIC_URL}/bg_deep.png)` 
         : `url(${process.env.PUBLIC_URL}/bg_shallow.png)`;
